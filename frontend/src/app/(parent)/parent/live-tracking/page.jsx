@@ -84,13 +84,12 @@ export default function ParentLiveTrackingPage() {
           </div>
         )}
 
-        {/* Live Interactive Map with Google Maps & Where Is My Train Timeline */}
+        {/* Live Route Transit Timeline */}
         <LiveBusMap
           bus={bus}
           route={bus?.route}
           stops={bus?.route?.stops || []}
-          defaultViewMode="split"
-          height="h-[420px]"
+          height="max-h-[500px]"
         />
 
         {/* Driver Card & Route Stop Info */}

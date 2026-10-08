@@ -98,8 +98,8 @@ body {
   animation: userPulse 2s infinite;
 }
 
-/* Where Is My Train Timeline Animations */
-@keyframes wimtPulse {
+/* Live Bus Transit Route Timeline Animations */
+@keyframes timelinePulse {
   0% {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
@@ -114,8 +114,8 @@ body {
   }
 }
 
-.wimt-active-pulse {
-  animation: wimtPulse 1.8s infinite;
+.timeline-active-pulse {
+  animation: timelinePulse 1.8s infinite;
 }
 
 @keyframes trackFlow {
@@ -127,7 +127,7 @@ body {
   }
 }
 
-.wimt-moving-track {
+.timeline-moving-track {
   background: repeating-linear-gradient(
     to bottom,
     #10b981,
