@@ -1,0 +1,414 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model School {
+  id               String           @id @default(uuid())
+  name             String
+  code             String           @unique
+  address          String?
+  phone            String?
+  email            String?
+  logo             String?
+  status           String           @default("ACTIVE") // ACTIVE, INACTIVE
+  subscriptionPlan String           @default("BASIC")  // BASIC, PRO, ENTERPRISE
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  users            User[]
+  families         Family[]
+  parents          Parent[]
+  students         Student[]
+  teachers         Teacher[]
+  drivers          Driver[]
+  buses            Bus[]
+  routes           Route[]
+  trips            Trip[]
+  feePlans         FeePlan[]
+  studentFees      StudentFee[]
+  payments         Payment[]
+  notifications    Notification[]
+  emergencyAlerts  EmergencyAlert[]
+
+  @@map("schools")
+}
+
+model User {
+  id           String         @id @default(uuid())
+  schoolId     String?
+  role         String         // SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, DRIVER, PARENT
+  name         String
+  email        String?        @unique
+  mobile       String?
+  passwordHash String?
+  status       String         @default("ACTIVE")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  school       School?        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher      Teacher?
+  driver       Driver?
+  notifications Notification[] @relation("UserNotifications")
+
+  @@map("users")
+}
+
+model Family {
+  id         String       @id @default(uuid())
+  schoolId   String
+  familyCode String       // e.g. FAM7824
+  status     String       @default("ACTIVE")
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  school     School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  parents    Parent[]
+  students   Student[]
+  studentFees StudentFee[]
+  payments   Payment[]
+
+  @@unique([schoolId, familyCode])
+  @@map("families")
+}
+
+model Parent {
+  id           String   @id @default(uuid())
+  familyId     String
+  schoolId     String
+  name         String
+  relationship String   @default("GUARDIAN") // FATHER, MOTHER, GUARDIAN
+  mobile       String
+  email        String?
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  family       Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, mobile])
+  @@map("parents")
+}
+
+model Teacher {
+  id              String   @id @default(uuid())
+  schoolId        String
+  userId          String?  @unique
+  name            String
+  mobile          String
+  email           String?
+  employeeId      String
+  assignedClasses String?  // comma separated or JSON e.g. "10-A, 10-B"
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  school          School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([schoolId, employeeId])
+  @@unique([schoolId, mobile])
+  @@map("teachers")
+}
+
+model Driver {
+  id            String   @id @default(uuid())
+  schoolId      String
+  userId        String?  @unique
+  name          String
+  mobile        String
+  licenseNumber String
+  status        String   @default("ACTIVE") // ACTIVE, INACTIVE, ON_LEAVE
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  buses         Bus[]
+  trips         Trip[]
+  emergencyAlerts EmergencyAlert[]
+
+  @@unique([schoolId, licenseNumber])
+  @@unique([schoolId, mobile])
+  @@map("drivers")
+}
+
+model Bus {
+  id                 String           @id @default(uuid())
+  schoolId           String
+  busNumber          String           // e.g. BUS 01
+  registrationNumber String           // e.g. KL-10-AZ-1001
+  capacity           Int              @default(30)
+  driverId           String?
+  routeId            String?
+  status             String           @default("ACTIVE") // ACTIVE, INACTIVE, MAINTENANCE, OFFLINE
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  school             School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  driver             Driver?          @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  route              Route?           @relation("BusAssignedRoute", fields: [routeId], references: [id], onDelete: SetNull)
+  operatingRoutes    Route[]          @relation("RouteBus")
+  students           Student[]
+  trips              Trip[]
+  emergencyAlerts    EmergencyAlert[]
+  locationLogs       BusLocationLog[]
+
+  @@unique([schoolId, busNumber])
+  @@map("buses")
+}
+
+model Route {
+  id          String   @id @default(uuid())
+  schoolId    String
+  name        String   // e.g. Nilambur Route
+  busId       String?
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  bus         Bus?     @relation("RouteBus", fields: [busId], references: [id], onDelete: SetNull)
+  assignedBuses Bus[]  @relation("BusAssignedRoute")
+  stops       Stop[]
+  trips       Trip[]
+
+  @@map("routes")
+}
+
+model Stop {
+  id               String    @id @default(uuid())
+  routeId          String
+  name             String
+  latitude         Float
+  longitude        Float
+  sequence         Int
+  estimatedArrival String?   // e.g. "07:45 AM"
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  route            Route     @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  pickupStudents   Student[] @relation("PickupStop")
+  dropStudents     Student[] @relation("DropStop")
+
+  @@map("stops")
+}
+
+model Student {
+  id           String              @id @default(uuid())
+  schoolId     String
+  studentId    String              // e.g. STU101
+  name         String
+  class        String              // e.g. "10"
+  division     String              // e.g. "A"
+  familyId     String
+  busId        String?
+  pickupStopId String?
+  dropStopId   String?
+  feePlanId    String?
+  status       String              @default("ACTIVE")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  family       Family              @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  bus          Bus?                @relation(fields: [busId], references: [id], onDelete: SetNull)
+  pickupStop   Stop?               @relation("PickupStop", fields: [pickupStopId], references: [id], onDelete: SetNull)
+  dropStop     Stop?               @relation("DropStop", fields: [dropStopId], references: [id], onDelete: SetNull)
+  feePlan      FeePlan?            @relation(fields: [feePlanId], references: [id], onDelete: SetNull)
+  tripStatuses StudentTripStatus[]
+  fees         StudentFee[]
+  payments     Payment[]
+
+  @@unique([schoolId, studentId])
+  @@map("students")
+}
+
+model Trip {
+  id              String              @id @default(uuid())
+  schoolId        String
+  busId           String
+  driverId        String
+  routeId         String
+  type            String              // MORNING, AFTERNOON
+  scheduledStart  DateTime?
+  actualStart     DateTime?
+  actualEnd       DateTime?
+  status          String              @default("SCHEDULED") // SCHEDULED, ACTIVE, COMPLETED, CANCELLED
+  currentStopId   String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  school          School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  bus             Bus                 @relation(fields: [busId], references: [id], onDelete: Cascade)
+  driver          Driver              @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  route           Route               @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  studentStatuses StudentTripStatus[]
+  emergencyAlerts EmergencyAlert[]
+  locationLogs    BusLocationLog[]
+
+  @@map("trips")
+}
+
+model StudentTripStatus {
+  id        String    @id @default(uuid())
+  tripId    String
+  studentId String
+  status    String    @default("WAITING") // WAITING, PICKED_UP, ON_BUS, DROPPED_OFF, ABSENT
+  stopId    String?
+  markedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  trip      Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, studentId])
+  @@map("student_trip_statuses")
+}
+
+model BusLocationLog {
+  id        String   @id @default(uuid())
+  busId     String
+  tripId    String?
+  latitude  Float
+  longitude Float
+  speed     Float    @default(0)
+  heading   Float    @default(0)
+  timestamp DateTime @default(now())
+
+  bus       Bus      @relation(fields: [busId], references: [id], onDelete: Cascade)
+  trip      Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
+
+  @@map("bus_location_logs")
+}
+
+model FeePlan {
+  id            String       @id @default(uuid())
+  schoolId      String
+  name          String       // e.g. Standard Annual Bus Fee
+  amount        Float
+  billingPeriod String       @default("MONTHLY") // MONTHLY, QUARTERLY, YEARLY
+  dueDay        Int          @default(10)
+  lateFee       Float        @default(50)
+  status        String       @default("ACTIVE")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  school        School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  students      Student[]
+  studentFees   StudentFee[]
+
+  @@map("fee_plans")
+}
+
+model StudentFee {
+  id                 String    @id @default(uuid())
+  schoolId           String
+  studentId          String
+  feePlanId          String
+  familyId           String
+  billingPeriodLabel String    // e.g. "October 2026", "Q1 2026"
+  baseAmount         Float
+  discount           Float     @default(0)
+  lateFee            Float     @default(0)
+  totalAmount        Float
+  status             String    @default("PENDING") // PENDING, PAID, OVERDUE, PARTIAL
+  dueDate            DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  school             School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student            Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  feePlan            FeePlan   @relation(fields: [feePlanId], references: [id], onDelete: Cascade)
+  family             Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  payments           Payment[]
+
+  @@map("student_fees")
+}
+
+model Payment {
+  id               String      @id @default(uuid())
+  schoolId         String
+  familyId         String
+  studentFeeId     String?
+  studentId        String?
+  amount           Float
+  paymentReference String      @unique
+  paymentMethod    String      @default("MOCK") // CARD, UPI, NET_BANKING, MOCK
+  status           String      @default("SUCCESS") // PENDING, SUCCESS, FAILED, REFUNDED
+  paidAt           DateTime    @default(now())
+  receiptNumber    String      @unique
+  metadata         String?     // JSON metadata
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  school           School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  family           Family      @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  studentFee       StudentFee? @relation(fields: [studentFeeId], references: [id], onDelete: SetNull)
+  student          Student?    @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@map("payments")
+}
+
+model EmergencyAlert {
+  id             String    @id @default(uuid())
+  schoolId       String
+  busId          String
+  driverId       String
+  tripId         String?
+  latitude       Float?
+  longitude      Float?
+  reason         String
+  status         String    @default("ACTIVE") // ACTIVE, ACKNOWLEDGED, RESOLVED
+  acknowledgedBy String?
+  resolvedBy     String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  school         School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  bus            Bus       @relation(fields: [busId], references: [id], onDelete: Cascade)
+  driver         Driver    @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  trip           Trip?     @relation(fields: [tripId], references: [id], onDelete: SetNull)
+
+  @@map("emergency_alerts")
+}
+
+model Notification {
+  id              String   @id @default(uuid())
+  schoolId        String
+  recipientUserId String?
+  recipientRole   String?  // ALL, SCHOOL_ADMIN, TEACHER, DRIVER, PARENT
+  familyId        String?
+  title           String
+  message         String
+  type            String   // BUS_STARTED, BUS_APPROACHING, STUDENT_PICKED_UP, STUDENT_DROPPED, BUS_DELAYED, PAYMENT_SUCCESS, PAYMENT_FAILED, EMERGENCY, SCHOOL_ANNOUNCEMENT
+  isRead          Boolean  @default(false)
+  metadata        String?  // JSON
+  createdAt       DateTime @default(now())
+
+  school          School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  recipientUser   User?    @relation("UserNotifications", fields: [recipientUserId], references: [id], onDelete: SetNull)
+
+  @@map("notifications")
+}
+
+model OtpSession {
+  id        String   @id @default(uuid())
+  mobile    String
+  role      String   // TEACHER, DRIVER, PARENT
+  schoolId  String?
+  familyId  String?
+  otpHash   String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("otp_sessions")
+}
