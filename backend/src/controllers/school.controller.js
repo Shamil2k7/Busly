@@ -251,7 +251,7 @@ const createSchoolAdmin = async (req, res, next) => {
       data: {
         name: name.trim(),
         email: normalizedEmail,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         mobile: mobile?.trim() || null,
         role: 'SCHOOL_ADMIN',
         schoolId: id,
