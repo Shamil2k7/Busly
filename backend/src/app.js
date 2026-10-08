@@ -22,9 +22,31 @@ const reportRoutes = require('./routes/report.routes');
 
 const app = express();
 
-// Middlewares
+// Dynamic CORS resolver supporting localhost, configured frontendUrl, and *.vercel.app deployments
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (
+    origin === config.frontendUrl ||
+    origin === 'http://localhost:3000' ||
+    origin === 'http://127.0.0.1:3000'
+  ) {
+    return true;
+  }
+  try {
+    const parsed = new URL(origin);
+    if (parsed.hostname.endsWith('.vercel.app') || parsed.hostname === 'localhost') {
+      return true;
+    }
+  } catch (e) {
+    // ignore parsing errors
+  }
+  return true;
+};
+
 app.use(cors({
-  origin: [config.frontendUrl, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: (origin, callback) => {
+    callback(null, isAllowedOrigin(origin));
+  },
   credentials: true,
 }));
 app.use(express.json());
@@ -34,6 +56,32 @@ app.use(cookieParser());
 if (config.nodeEnv !== 'test') {
   app.use(morgan('dev'));
 }
+
+// Root Welcome & API Discovery Route
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Busly API',
+    tagline: 'Smart School Transport SaaS Platform',
+    status: 'online',
+    version: '1.0.0',
+    documentation: '/api/health',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      schools: '/api/schools',
+      students: '/api/students',
+      buses: '/api/buses',
+      routes: '/api/routes',
+      trips: '/api/trips',
+      fees: '/api/fees',
+      payments: '/api/payments',
+      emergency: '/api/emergency',
+      notifications: '/api/notifications',
+      reports: '/api/reports',
+    },
+    time: new Date().toISOString(),
+  });
+});
 
 // Health Check
 app.get('/api/health', (req, res) => {

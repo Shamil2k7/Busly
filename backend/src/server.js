@@ -8,7 +8,23 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: [config.frontendUrl, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (
+        origin === config.frontendUrl ||
+        origin === 'http://localhost:3000' ||
+        origin === 'http://127.0.0.1:3000'
+      ) {
+        return callback(null, true);
+      }
+      try {
+        const parsed = new URL(origin);
+        if (parsed.hostname.endsWith('.vercel.app') || parsed.hostname === 'localhost') {
+          return callback(null, true);
+        }
+      } catch (e) {}
+      return callback(null, true);
+    },
     credentials: true,
   },
 });

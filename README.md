@@ -232,6 +232,21 @@ npm run dev # or npm run start (Port 3000)
 
 ---
 
+## 🚀 Vercel Deployment
+
+Deploying the Busly Next.js frontend to **Vercel** is ready out-of-the-box:
+
+1. Import the repository in [Vercel](https://vercel.com).
+2. Set Root Directory to `frontend` (or leave default `/` — root `vercel.json` handles build automatically).
+3. Add Environment Variables:
+   - `NEXT_PUBLIC_API_URL`: Your deployed Express API URL (e.g. `https://busly-backend.onrender.com`)
+   - `NEXT_PUBLIC_SOCKET_URL`: Your deployed WebSocket URL (e.g. `https://busly-backend.onrender.com`)
+4. The backend already includes dynamic CORS support for all `*.vercel.app` domains!
+
+See [VERCEL_DEPLOYMENT_GUIDE.md](file:///d:/Busly/VERCEL_DEPLOYMENT_GUIDE.md) for full instructions.
+
+---
+
 ## 🧪 Automated Test Suite
 
 BUSLY includes a comprehensive test suite built on the native Node.js test runner (`node:test`):

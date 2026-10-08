@@ -1,0 +1,13 @@
+{
+  "name": "busly",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Busly - Smart School Transport SaaS Platform",
+  "scripts": {
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend run start",
+    "dev": "npm --prefix frontend run dev",
+    "lint": "npm --prefix frontend run lint",
+    "install:all": "npm --prefix frontend install && npm --prefix backend install"
+  }
+}
