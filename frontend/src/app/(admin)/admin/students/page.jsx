@@ -30,6 +30,17 @@ export default function AdminStudentsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterClass, setFilterClass] = useState('');
+  const [filterDivision, setFilterDivision] = useState('');
+
+  // Configurable Classes & Divisions
+  const [classes, setClasses] = useState(['10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'UKG', 'LKG']);
+  const [divisions, setDivisions] = useState(['A', 'B', 'C', 'D']);
+
+  // Add Class & Add Division Modals
+  const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
+  const [newClassName, setNewClassName] = useState('');
+  const [isAddDivisionModalOpen, setIsAddDivisionModalOpen] = useState(false);
+  const [newDivisionName, setNewDivisionName] = useState('');
 
   // Add Student Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -49,15 +60,54 @@ export default function AdminStudentsPage() {
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [createdResult, setCreatedResult] = useState(null);
 
+  // Restore custom classes & divisions from localStorage
+  useEffect(() => {
+    try {
+      const savedClasses = localStorage.getItem('busly_classes');
+      if (savedClasses) {
+        const parsed = JSON.parse(savedClasses);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setClasses((prev) => Array.from(new Set([...parsed, ...prev])));
+        }
+      }
+      const savedDivs = localStorage.getItem('busly_divisions');
+      if (savedDivs) {
+        const parsed = JSON.parse(savedDivs);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setDivisions((prev) => Array.from(new Set([...parsed, ...prev])));
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   const loadData = async () => {
     try {
+      const queryParams = new URLSearchParams();
+      if (search) queryParams.set('search', search);
+      if (filterClass) queryParams.set('class', filterClass);
+      if (filterDivision) queryParams.set('division', filterDivision);
+
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
       const [stRes, bRes, fpRes] = await Promise.all([
-        api.get(`/api/students?search=${encodeURIComponent(search)}${filterClass ? `&class=${filterClass}` : ''}`),
+        api.get(`/api/students${queryString}`),
         api.get('/api/buses'),
         api.get('/api/fees/plans'),
       ]);
 
-      if (stRes.success) setStudents(stRes.data);
+      if (stRes.success && stRes.data) {
+        setStudents(stRes.data);
+        const existingClasses = stRes.data.map((s) => s.class).filter(Boolean);
+        const existingDivs = stRes.data.map((s) => s.division).filter(Boolean);
+        if (existingClasses.length > 0) {
+          setClasses((prev) => Array.from(new Set([...prev, ...existingClasses])));
+        }
+        if (existingDivs.length > 0) {
+          setDivisions((prev) => Array.from(new Set([...prev, ...existingDivs])));
+        }
+      }
       if (bRes.success) setBuses(bRes.data);
       if (fpRes.success) setFeePlans(fpRes.data);
     } catch (err) {
@@ -69,7 +119,43 @@ export default function AdminStudentsPage() {
 
   useEffect(() => {
     loadData();
-  }, [search, filterClass]);
+  }, [search, filterClass, filterDivision]);
+
+  const handleAddClassSubmit = (e) => {
+    if (e) e.preventDefault();
+    const val = newClassName.trim().replace(/^class\s+/i, '');
+    if (!val) {
+      showToast('Please enter a class name', 'error');
+      return;
+    }
+    const updated = Array.from(new Set([val, ...classes]));
+    setClasses(updated);
+    try {
+      localStorage.setItem('busly_classes', JSON.stringify(updated));
+    } catch (err) {}
+    setFormData((prev) => ({ ...prev, class: val }));
+    showToast(`Class "${val}" added successfully`, 'success');
+    setNewClassName('');
+    setIsAddClassModalOpen(false);
+  };
+
+  const handleAddDivisionSubmit = (e) => {
+    if (e) e.preventDefault();
+    const val = newDivisionName.trim().replace(/^div(ision)?\s+/i, '').toUpperCase();
+    if (!val) {
+      showToast('Please enter a division name', 'error');
+      return;
+    }
+    const updated = Array.from(new Set([...divisions, val]));
+    setDivisions(updated);
+    try {
+      localStorage.setItem('busly_divisions', JSON.stringify(updated));
+    } catch (err) {}
+    setFormData((prev) => ({ ...prev, division: val }));
+    showToast(`Division "${val}" added successfully`, 'success');
+    setNewDivisionName('');
+    setIsAddDivisionModalOpen(false);
+  };
 
   const handleCreateStudent = async (e) => {
     e.preventDefault();
@@ -107,11 +193,11 @@ export default function AdminStudentsPage() {
 
       <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-3">
-            <div className="w-full sm:w-72">
+          <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-2.5">
+            <div className="w-full sm:w-64">
               <Input
                 icon={Search}
-                placeholder="Search by student name or ID..."
+                placeholder="Search student or ID..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -120,40 +206,73 @@ export default function AdminStudentsPage() {
               <Select
                 value={filterClass}
                 onChange={(e) => setFilterClass(e.target.value)}
-                options={[
-                  { value: '', label: 'All Classes' },
-                  { value: '10', label: 'Class 10' },
-                  { value: '9', label: 'Class 9' },
-                  { value: '8', label: 'Class 8' },
-                  { value: '7', label: 'Class 7' },
-                  { value: '6', label: 'Class 6' },
-                ]}
-              />
+              >
+                <option value="">All Classes</option>
+                {classes.map((c) => (
+                  <option key={c} value={c}>Class {c}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="w-full sm:w-36">
+              <Select
+                value={filterDivision}
+                onChange={(e) => setFilterDivision(e.target.value)}
+              >
+                <option value="">All Divisions</option>
+                {divisions.map((d) => (
+                  <option key={d} value={d}>Division {d}</option>
+                ))}
+              </Select>
             </div>
           </div>
 
-          <Button
-            variant="primary"
-            className="w-full sm:w-auto"
-            onClick={() => {
-              setCreatedResult(null);
-              setFormData({
-                name: '',
-                studentId: `STU-${Math.floor(100 + Math.random() * 900)}`,
-                class: '10',
-                division: 'A',
-                parentName: '',
-                parentMobile: '',
-                parentEmail: '',
-                relationship: 'FATHER',
-                busId: buses[0]?.id || '',
-                feePlanId: feePlans[0]?.id || '',
-              });
-              setIsAddModalOpen(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-1.5" /> Enroll Student
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setNewClassName('');
+                setIsAddClassModalOpen(true);
+              }}
+              className="flex-1 sm:flex-none font-bold border-gray-300 text-slate-700 hover:bg-amber-50"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1 text-amber-500" /> Add Class
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setNewDivisionName('');
+                setIsAddDivisionModalOpen(true);
+              }}
+              className="flex-1 sm:flex-none font-bold border-gray-300 text-slate-700 hover:bg-amber-50"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1 text-amber-500" /> Add Division
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              className="w-full sm:w-auto font-bold shadow-md"
+              onClick={() => {
+                setCreatedResult(null);
+                setFormData({
+                  name: '',
+                  studentId: `STU-${Math.floor(100 + Math.random() * 900)}`,
+                  class: classes[0] || '10',
+                  division: divisions[0] || 'A',
+                  parentName: '',
+                  parentMobile: '',
+                  parentEmail: '',
+                  relationship: 'FATHER',
+                  busId: buses[0]?.id || '',
+                  feePlanId: feePlans[0]?.id || '',
+                });
+                setIsAddModalOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-1.5" /> Enroll Student
+            </Button>
+          </div>
         </div>
 
         {/* Student Table */}
@@ -287,28 +406,81 @@ export default function AdminStudentsPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Select
-                label="Class"
-                value={formData.class}
-                onChange={(e) => setFormData({ ...formData, class: e.target.value })}
-                options={[
-                  { value: '10', label: 'Class 10' },
-                  { value: '9', label: 'Class 9' },
-                  { value: '8', label: 'Class 8' },
-                  { value: '7', label: 'Class 7' },
-                  { value: '6', label: 'Class 6' },
-                ]}
-              />
-              <Select
-                label="Division"
-                value={formData.division}
-                onChange={(e) => setFormData({ ...formData, division: e.target.value })}
-                options={[
-                  { value: 'A', label: 'Division A' },
-                  { value: 'B', label: 'Division B' },
-                  { value: 'C', label: 'Division C' },
-                ]}
-              />
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Class
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewClassName('');
+                      setIsAddClassModalOpen(true);
+                    }}
+                    className="text-[11px] font-bold text-amber-600 hover:text-amber-700 hover:underline flex items-center"
+                  >
+                    <Plus className="w-3 h-3 mr-0.5" /> Add Class
+                  </button>
+                </div>
+                <Select
+                  value={formData.class}
+                  onChange={(e) => {
+                    if (e.target.value === '__ADD_NEW__') {
+                      setNewClassName('');
+                      setIsAddClassModalOpen(true);
+                    } else {
+                      setFormData({ ...formData, class: e.target.value });
+                    }
+                  }}
+                >
+                  {classes.map((c) => (
+                    <option key={c} value={c}>
+                      Class {c}
+                    </option>
+                  ))}
+                  <option value="__ADD_NEW__" className="text-amber-600 font-bold">
+                    + Add New Class...
+                  </option>
+                </Select>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Division
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewDivisionName('');
+                      setIsAddDivisionModalOpen(true);
+                    }}
+                    className="text-[11px] font-bold text-amber-600 hover:text-amber-700 hover:underline flex items-center"
+                  >
+                    <Plus className="w-3 h-3 mr-0.5" /> Add Division
+                  </button>
+                </div>
+                <Select
+                  value={formData.division}
+                  onChange={(e) => {
+                    if (e.target.value === '__ADD_NEW__') {
+                      setNewDivisionName('');
+                      setIsAddDivisionModalOpen(true);
+                    } else {
+                      setFormData({ ...formData, division: e.target.value });
+                    }
+                  }}
+                >
+                  {divisions.map((d) => (
+                    <option key={d} value={d}>
+                      Division {d}
+                    </option>
+                  ))}
+                  <option value="__ADD_NEW__" className="text-amber-600 font-bold">
+                    + Add New Division...
+                  </option>
+                </Select>
+              </div>
             </div>
 
             <div className="border-t border-gray-100 pt-3">
@@ -432,6 +604,98 @@ export default function AdminStudentsPage() {
           </div>
         </Modal>
       )}
+
+      {/* Add Class Modal */}
+      <Modal
+        isOpen={isAddClassModalOpen}
+        onClose={() => setIsAddClassModalOpen(false)}
+        title="Add New School Class"
+        subtitle="Define a grade or class level for student grouping"
+      >
+        <form onSubmit={handleAddClassSubmit} className="space-y-4">
+          <Input
+            label="Class Name / Number"
+            placeholder="e.g. 11, 12, Pre-KG, Nursery, UKG"
+            value={newClassName}
+            onChange={(e) => setNewClassName(e.target.value)}
+            required
+            autoFocus
+          />
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+              Quick Suggestions:
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {['11', '12', 'Nursery', 'LKG', 'UKG', 'Pre-KG', 'Playgroup'].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => setNewClassName(suggestion)}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-gray-100 hover:bg-amber-100 hover:text-amber-900 text-gray-700 border border-gray-200 transition-colors"
+                >
+                  + {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+            <Button variant="outline" type="button" onClick={() => setIsAddClassModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" className="font-bold shadow-md">
+              Add Class
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Add Division Modal */}
+      <Modal
+        isOpen={isAddDivisionModalOpen}
+        onClose={() => setIsAddDivisionModalOpen(false)}
+        title="Add New Division / Section"
+        subtitle="Define a section (e.g. A, B, C, D, or house/group names)"
+      >
+        <form onSubmit={handleAddDivisionSubmit} className="space-y-4">
+          <Input
+            label="Division Name"
+            placeholder="e.g. D, E, F, Blue, Ruby"
+            value={newDivisionName}
+            onChange={(e) => setNewDivisionName(e.target.value)}
+            required
+            autoFocus
+          />
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+              Quick Suggestions:
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {['D', 'E', 'F', 'G', 'H', 'Lotus', 'Rose'].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => setNewDivisionName(suggestion)}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-gray-100 hover:bg-amber-100 hover:text-amber-900 text-gray-700 border border-gray-200 transition-colors"
+                >
+                  + {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+            <Button variant="outline" type="button" onClick={() => setIsAddDivisionModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" className="font-bold shadow-md">
+              Add Division
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

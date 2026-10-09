@@ -21,6 +21,7 @@ import Card, { CardHeader, CardContent } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
 import Modal from '@/components/ui/Modal';
 import LiveBusMap from '@/components/maps/LiveBusMap';
 import LocationPickerMap from '@/components/maps/LocationPickerMap';
@@ -30,12 +31,22 @@ import { getCurrentGpsLocation, reverseGeocode } from '@/lib/geo-utils';
 
 export default function AdminRoutesPage() {
   const [routes, setRoutes] = useState([]);
+  const [buses, setBuses] = useState([]);
   const [selectedRouteId, setSelectedRouteId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Create Route Modal
   const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
   const [routeName, setRouteName] = useState('');
+
+  // Edit Route Modal
+  const [isEditRouteModalOpen, setIsEditRouteModalOpen] = useState(false);
+  const [editRouteForm, setEditRouteForm] = useState({
+    name: '',
+    busId: '',
+    status: 'ACTIVE',
+  });
+  const [isSubmittingRoute, setIsSubmittingRoute] = useState(false);
 
   // Add Stop Modal
   const [targetRouteForStop, setTargetRouteForStop] = useState(null);
@@ -49,14 +60,32 @@ export default function AdminRoutesPage() {
     detectedAddress: '',
   });
 
+  // Edit Stop Modal
+  const [editingStop, setEditingStop] = useState(null);
+  const [editStopForm, setEditStopForm] = useState({
+    name: '',
+    latitude: 11.2850,
+    longitude: 76.2350,
+    sequence: 1,
+    estimatedArrival: '',
+    detectedAddress: '',
+  });
+  const [isSubmittingStop, setIsSubmittingStop] = useState(false);
+
   const loadRoutes = async () => {
     try {
-      const res = await api.get('/api/routes');
-      if (res.success && res.data) {
-        setRoutes(res.data);
-        if (!selectedRouteId && res.data.length > 0) {
-          setSelectedRouteId(res.data[0].id);
+      const [rRes, bRes] = await Promise.all([
+        api.get('/api/routes'),
+        api.get('/api/buses').catch(() => ({ success: false })),
+      ]);
+      if (rRes.success && rRes.data) {
+        setRoutes(rRes.data);
+        if (!selectedRouteId && rRes.data.length > 0) {
+          setSelectedRouteId(rRes.data[0].id);
         }
+      }
+      if (bRes.success && bRes.data) {
+        setBuses(bRes.data);
       }
     } catch (err) {
       showToast('Failed to load routes', 'error');
@@ -163,6 +192,91 @@ export default function AdminRoutesPage() {
     }
   };
 
+  const handleOpenEditRoute = (route) => {
+    if (!route) return;
+    setEditRouteForm({
+      name: route.name || '',
+      busId: route.busId || route.bus?.id || '',
+      status: route.status || 'ACTIVE',
+    });
+    setIsEditRouteModalOpen(true);
+  };
+
+  const handleUpdateRoute = async (e) => {
+    e.preventDefault();
+    if (!activeRoute) return;
+    setIsSubmittingRoute(true);
+    try {
+      const res = await api.put(`/api/routes/${activeRoute.id}`, {
+        name: editRouteForm.name,
+        busId: editRouteForm.busId || null,
+        status: editRouteForm.status,
+      });
+      if (res.success) {
+        showToast('Route corridor updated successfully', 'success');
+        setIsEditRouteModalOpen(false);
+        await loadRoutes();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to update route', 'error');
+    } finally {
+      setIsSubmittingRoute(false);
+    }
+  };
+
+  const handleDeleteRoute = async () => {
+    if (!activeRoute) return;
+    if (!confirm(`Are you sure you want to delete route "${activeRoute.name}"? This will delete all its stops.`)) return;
+    try {
+      const res = await api.delete(`/api/routes/${activeRoute.id}`);
+      if (res.success) {
+        showToast(`Route "${activeRoute.name}" deleted`, 'success');
+        setIsEditRouteModalOpen(false);
+        const remaining = routes.filter((r) => r.id !== activeRoute.id);
+        setSelectedRouteId(remaining[0]?.id || null);
+        await loadRoutes();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to delete route', 'error');
+    }
+  };
+
+  const handleOpenEditStopModal = (stop) => {
+    setEditingStop(stop);
+    setEditStopForm({
+      name: stop.name,
+      latitude: stop.latitude,
+      longitude: stop.longitude,
+      sequence: stop.sequence,
+      estimatedArrival: stop.estimatedArrival || '',
+      detectedAddress: '',
+    });
+  };
+
+  const handleUpdateStopSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingStop) return;
+    setIsSubmittingStop(true);
+    try {
+      const res = await api.put(`/api/routes/stops/${editingStop.id}`, {
+        name: editStopForm.name,
+        latitude: parseFloat(editStopForm.latitude),
+        longitude: parseFloat(editStopForm.longitude),
+        sequence: parseInt(editStopForm.sequence, 10),
+        estimatedArrival: editStopForm.estimatedArrival || null,
+      });
+      if (res.success) {
+        showToast(`Stop "${editStopForm.name}" updated successfully`, 'success');
+        setEditingStop(null);
+        await loadRoutes();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to update stop', 'error');
+    } finally {
+      setIsSubmittingStop(false);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col">
       <AdminTopNav
@@ -221,13 +335,22 @@ export default function AdminRoutesPage() {
         {activeRoute && (
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-wider text-slate-800">
                   {activeRoute.name} Live Corridor
                 </span>
                 <Badge variant="warning" size="sm" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
                   Rapido / Instamart View
                 </Badge>
+                <button
+                  type="button"
+                  onClick={() => handleOpenEditRoute(activeRoute)}
+                  className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-gray-200 shadow-sm transition-all"
+                  title="Edit Route Corridor"
+                >
+                  <Edit className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Edit Route</span>
+                </button>
               </div>
 
               {/* Quick Add Stop from GPS Button */}
@@ -350,6 +473,13 @@ export default function AdminRoutesPage() {
                           </div>
 
                           <button
+                            onClick={() => handleOpenEditStopModal(stop)}
+                            className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                            title="Edit stop"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
                             onClick={() => handleDeleteStop(stop.id, stop.name)}
                             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                             title="Delete stop"
@@ -388,6 +518,16 @@ export default function AdminRoutesPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-500 font-medium">Corridor Status</span>
                   <Badge variant="success" size="sm">{activeRoute?.status || 'ACTIVE'}</Badge>
+                </div>
+                <div className="pt-2 border-t border-amber-200/50">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full font-bold bg-white text-slate-800 hover:bg-amber-100/50"
+                    onClick={() => handleOpenEditRoute(activeRoute)}
+                  >
+                    <Edit className="w-3.5 h-3.5 mr-1 text-amber-500" /> Edit Corridor Details
+                  </Button>
                 </div>
               </div>
 
@@ -527,6 +667,170 @@ export default function AdminRoutesPage() {
               </Button>
               <Button type="submit" variant="primary" className="font-bold shadow-md">
                 Save & Add Stop
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Route Modal */}
+      {isEditRouteModalOpen && activeRoute && (
+        <Modal
+          isOpen={isEditRouteModalOpen}
+          onClose={() => setIsEditRouteModalOpen(false)}
+          title={`Edit Route: ${activeRoute.name}`}
+          subtitle="Update corridor name, assigned fleet bus, or status"
+        >
+          <form onSubmit={handleUpdateRoute} className="space-y-4">
+            <Input
+              label="Route Corridor Name"
+              placeholder="e.g. East Valley Highway Corridor"
+              value={editRouteForm.name}
+              onChange={(e) => setEditRouteForm({ ...editRouteForm, name: e.target.value })}
+              required
+            />
+
+            <Select
+              label="Assigned Bus"
+              value={editRouteForm.busId}
+              onChange={(e) => setEditRouteForm({ ...editRouteForm, busId: e.target.value })}
+            >
+              <option value="">Unassigned (No Bus)</option>
+              {buses.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.busNumber} ({b.registrationNumber}) - Cap: {b.capacity}
+                </option>
+              ))}
+            </Select>
+
+            <Select
+              label="Corridor Status"
+              value={editRouteForm.status}
+              onChange={(e) => setEditRouteForm({ ...editRouteForm, status: e.target.value })}
+              options={[
+                { value: 'ACTIVE', label: 'ACTIVE' },
+                { value: 'INACTIVE', label: 'INACTIVE' },
+              ]}
+            />
+
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-2 pt-3 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                onClick={handleDeleteRoute}
+                className="w-full sm:w-auto"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Route
+              </Button>
+
+              <div className="flex space-x-2 w-full sm:w-auto justify-end">
+                <Button variant="outline" onClick={() => setIsEditRouteModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" loading={isSubmittingRoute}>
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Stop Modal */}
+      {editingStop && (
+        <Modal
+          isOpen={!!editingStop}
+          onClose={() => setEditingStop(null)}
+          title={`Edit Stop: ${editingStop.name}`}
+          subtitle="Adjust sequence order, GPS coordinates, or estimated arrival"
+        >
+          <form onSubmit={handleUpdateStopSubmit} className="space-y-4">
+            {/* Interactive Map Picker */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                Pinpoint Location (Click or Drag on Map)
+              </label>
+              <LocationPickerMap
+                initialLat={parseFloat(editStopForm.latitude) || 11.2850}
+                initialLng={parseFloat(editStopForm.longitude) || 76.2350}
+                existingStops={activeRoute?.stops || []}
+                onLocationSelect={(loc) => {
+                  setEditStopForm((prev) => ({
+                    ...prev,
+                    latitude: loc.latitude,
+                    longitude: loc.longitude,
+                    name: prev.name ? prev.name : loc.suggestedName || prev.name,
+                    detectedAddress: loc.fullAddress || '',
+                  }));
+                }}
+              />
+            </div>
+
+            {/* Stop Name & ETA */}
+            <div className="space-y-3">
+              <Input
+                label="Stop / Landmark Name"
+                placeholder="e.g. Town Hall Junction, Nilambur"
+                value={editStopForm.name}
+                onChange={(e) => setEditStopForm({ ...editStopForm, name: e.target.value })}
+                required
+              />
+
+              {editStopForm.detectedAddress && (
+                <p className="text-[11px] text-gray-500 font-mono truncate">
+                  📍 {editStopForm.detectedAddress}
+                </p>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Sequence #"
+                  type="number"
+                  value={editStopForm.sequence}
+                  onChange={(e) => setEditStopForm({ ...editStopForm, sequence: e.target.value })}
+                  required
+                />
+                <Input
+                  label="Estimated Arrival (ETA)"
+                  placeholder="07:45 AM"
+                  value={editStopForm.estimatedArrival}
+                  onChange={(e) => setEditStopForm({ ...editStopForm, estimatedArrival: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="text-gray-500 text-[11px]">Latitude</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    className="w-full mt-1 p-2 bg-gray-50 border border-gray-200 rounded-xl font-mono text-xs"
+                    value={editStopForm.latitude}
+                    onChange={(e) => setEditStopForm({ ...editStopForm, latitude: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-gray-500 text-[11px]">Longitude</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    className="w-full mt-1 p-2 bg-gray-50 border border-gray-200 rounded-xl font-mono text-xs"
+                    value={editStopForm.longitude}
+                    onChange={(e) => setEditStopForm({ ...editStopForm, longitude: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+              <Button variant="outline" onClick={() => setEditingStop(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" loading={isSubmittingStop} className="font-bold shadow-md">
+                Save Changes
               </Button>
             </div>
           </form>
