@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Phone, Mail, Award, Trash2 } from 'lucide-react';
+import { Users, Plus, Phone, Mail, Award, Trash2, Edit } from 'lucide-react';
 import AdminTopNav from '@/components/navigation/AdminTopNav';
 import Card, { CardHeader, CardContent } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
 import Modal from '@/components/ui/Modal';
 import { api } from '@/lib/api-client';
 import { showToast } from '@/components/ui/Toast';
@@ -21,6 +22,18 @@ export default function AdminTeachersPage() {
     email: '',
     employeeId: '',
     assignedClasses: '10-A, 10-B',
+  });
+
+  // Edit Teacher Modal State
+  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    mobile: '',
+    email: '',
+    assignedClasses: '',
+    status: 'ACTIVE',
   });
 
   const loadTeachers = async () => {
@@ -49,6 +62,50 @@ export default function AdminTeachersPage() {
       }
     } catch (err) {
       showToast(err.message, 'error');
+    }
+  };
+
+  const handleOpenEdit = (t) => {
+    setEditingTeacher(t);
+    setEditForm({
+      name: t.name || '',
+      mobile: t.mobile || '',
+      email: t.email || '',
+      assignedClasses: t.assignedClasses || '',
+      status: t.status || 'ACTIVE',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateTeacher = async (e) => {
+    e.preventDefault();
+    if (!editingTeacher) return;
+    setEditSubmitting(true);
+    try {
+      const res = await api.put(`/api/teachers/${editingTeacher.id}`, editForm);
+      if (res.success) {
+        showToast('Teacher updated successfully', 'success');
+        setIsEditModalOpen(false);
+        setEditingTeacher(null);
+        await loadTeachers();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to update teacher', 'error');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleDeleteTeacher = async (id, name) => {
+    if (!confirm(`Are you sure you want to remove teacher "${name}"?`)) return;
+    try {
+      const res = await api.delete(`/api/teachers/${id}`);
+      if (res.success) {
+        showToast(`Teacher "${name}" removed`, 'success');
+        await loadTeachers();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to delete teacher', 'error');
     }
   };
 
@@ -94,9 +151,27 @@ export default function AdminTeachersPage() {
                       <p className="font-mono text-xs text-gray-400">{t.employeeId}</p>
                     </div>
                   </div>
-                  <Badge variant="success" size="sm">
-                    {t.status}
-                  </Badge>
+                  <div className="flex items-center space-x-1">
+                    <Badge variant={t.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">
+                      {t.status}
+                    </Badge>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(t)}
+                      className="p-1 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                      title="Edit Teacher"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTeacher(t.id, t.name)}
+                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      title="Delete Teacher"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2 text-xs text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100 mt-3">
@@ -180,6 +255,74 @@ export default function AdminTeachersPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Edit Teacher Modal */}
+      {editingTeacher && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingTeacher(null);
+          }}
+          title={`Edit Teacher: ${editingTeacher.name}`}
+          subtitle={`Employee ID: ${editingTeacher.employeeId}`}
+        >
+          <form onSubmit={handleUpdateTeacher} className="space-y-4">
+            <Input
+              label="Teacher Full Name"
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              required
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Mobile Number (For OTP Login)"
+                type="tel"
+                value={editForm.mobile}
+                onChange={(e) => setEditForm({ ...editForm, mobile: e.target.value })}
+                required
+              />
+              <Input
+                label="Email Address"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="teacher@school.test"
+              />
+            </div>
+            <Input
+              label="Assigned Classes"
+              placeholder="e.g. 10-A, 10-B, 9-A"
+              value={editForm.assignedClasses}
+              onChange={(e) => setEditForm({ ...editForm, assignedClasses: e.target.value })}
+            />
+            <Select
+              label="Teacher Status"
+              value={editForm.status}
+              onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+              options={[
+                { value: 'ACTIVE', label: 'ACTIVE' },
+                { value: 'INACTIVE', label: 'INACTIVE' },
+              ]}
+            />
+            <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditingTeacher(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" loading={editSubmitting}>
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

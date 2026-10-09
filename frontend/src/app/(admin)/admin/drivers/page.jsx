@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Plus, Phone, Bus, ShieldCheck } from 'lucide-react';
+import { UserCheck, Plus, Phone, Bus, ShieldCheck, Edit, Trash2 } from 'lucide-react';
 import AdminTopNav from '@/components/navigation/AdminTopNav';
 import Card, { CardHeader, CardContent } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
 import Modal from '@/components/ui/Modal';
 import { api } from '@/lib/api-client';
 import { showToast } from '@/components/ui/Toast';
@@ -19,6 +20,17 @@ export default function AdminDriversPage() {
     name: '',
     mobile: '',
     licenseNumber: '',
+  });
+
+  // Edit Driver Modal State
+  const [editingDriver, setEditingDriver] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    mobile: '',
+    licenseNumber: '',
+    status: 'ACTIVE',
   });
 
   const loadDrivers = async () => {
@@ -47,6 +59,49 @@ export default function AdminDriversPage() {
       }
     } catch (err) {
       showToast(err.message, 'error');
+    }
+  };
+
+  const handleOpenEdit = (d) => {
+    setEditingDriver(d);
+    setEditForm({
+      name: d.name || '',
+      mobile: d.mobile || '',
+      licenseNumber: d.licenseNumber || '',
+      status: d.status || 'ACTIVE',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateDriver = async (e) => {
+    e.preventDefault();
+    if (!editingDriver) return;
+    setEditSubmitting(true);
+    try {
+      const res = await api.put(`/api/drivers/${editingDriver.id}`, editForm);
+      if (res.success) {
+        showToast('Driver updated successfully', 'success');
+        setIsEditModalOpen(false);
+        setEditingDriver(null);
+        await loadDrivers();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to update driver', 'error');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleDeleteDriver = async (id, name) => {
+    if (!confirm(`Are you sure you want to remove driver "${name}"?`)) return;
+    try {
+      const res = await api.delete(`/api/drivers/${id}`);
+      if (res.success) {
+        showToast(`Driver "${name}" removed`, 'success');
+        await loadDrivers();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to delete driver', 'error');
     }
   };
 
@@ -90,9 +145,27 @@ export default function AdminDriversPage() {
                       <p className="font-mono text-xs text-gray-400">{d.licenseNumber}</p>
                     </div>
                   </div>
-                  <Badge variant="success" size="sm">
-                    {d.status}
-                  </Badge>
+                  <div className="flex items-center space-x-1">
+                    <Badge variant={d.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">
+                      {d.status}
+                    </Badge>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(d)}
+                      className="p-1 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                      title="Edit Driver"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteDriver(d.id, d.name)}
+                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      title="Delete Driver"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2 text-xs text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100 mt-3">
@@ -160,6 +233,66 @@ export default function AdminDriversPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Edit Driver Modal */}
+      {editingDriver && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingDriver(null);
+          }}
+          title={`Edit Driver: ${editingDriver.name}`}
+          subtitle="Update driver contact credentials or driving license"
+        >
+          <form onSubmit={handleUpdateDriver} className="space-y-4">
+            <Input
+              label="Driver Full Name"
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              required
+            />
+            <Input
+              label="Mobile Number (For Cockpit OTP Login)"
+              type="tel"
+              value={editForm.mobile}
+              onChange={(e) => setEditForm({ ...editForm, mobile: e.target.value })}
+              required
+            />
+            <Input
+              label="Driving License Number"
+              value={editForm.licenseNumber}
+              onChange={(e) => setEditForm({ ...editForm, licenseNumber: e.target.value })}
+              required
+            />
+            <Select
+              label="Driver Status"
+              value={editForm.status}
+              onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+              options={[
+                { value: 'ACTIVE', label: 'ACTIVE' },
+                { value: 'INACTIVE', label: 'INACTIVE' },
+                { value: 'ON_LEAVE', label: 'ON_LEAVE' },
+              ]}
+            />
+            <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditingDriver(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" loading={editSubmitting}>
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

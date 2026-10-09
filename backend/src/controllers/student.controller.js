@@ -302,6 +302,11 @@ const updateStudent = async (req, res, next) => {
       dropStopId,
       feePlanId,
       status,
+      // Parent updates if provided
+      parentName,
+      parentMobile,
+      parentEmail,
+      relationship,
     } = req.body;
 
     const existing = await prisma.student.findFirst({
@@ -329,10 +334,74 @@ const updateStudent = async (req, res, next) => {
         pickupStop: true,
         dropStop: true,
         feePlan: true,
+        family: {
+          include: { parents: true },
+        },
       },
     });
 
+    // Update parent if details provided
+    if (existing.familyId && (parentName || parentMobile || relationship || parentEmail !== undefined)) {
+      const parent = await prisma.parent.findFirst({
+        where: { familyId: existing.familyId, schoolId },
+      });
+      if (parent) {
+        await prisma.parent.update({
+          where: { id: parent.id },
+          data: {
+            ...(parentName && { name: parentName.trim() }),
+            ...(parentMobile && { mobile: parentMobile.trim() }),
+            ...(relationship && { relationship }),
+            ...(parentEmail !== undefined && { email: parentEmail ? parentEmail.trim() : null }),
+          },
+        }).catch((e) => console.error('Parent update error:', e.message));
+      }
+    }
+
     return successResponse(res, updated, 'Student updated successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update Parent
+ * PUT /api/students/parents/:parentId
+ */
+const updateParent = async (req, res, next) => {
+  try {
+    const { parentId } = req.params;
+    const schoolId = req.targetSchoolId;
+    const { name, mobile, email, relationship, status } = req.body;
+
+    const parent = await prisma.parent.findFirst({
+      where: { id: parentId, schoolId },
+    });
+    if (!parent) {
+      return errorResponse(res, 'Parent not found', 404);
+    }
+
+    if (mobile && mobile.trim() !== parent.mobile) {
+      const existingMobile = await prisma.parent.findFirst({
+        where: { schoolId, mobile: mobile.trim(), NOT: { id: parentId } },
+      });
+      if (existingMobile) {
+        return errorResponse(res, 'Mobile number is already registered to another parent', 409);
+      }
+    }
+
+    const updated = await prisma.parent.update({
+      where: { id: parentId },
+      data: {
+        ...(name && { name: name.trim() }),
+        ...(mobile && { mobile: mobile.trim() }),
+        ...(email !== undefined && { email: email ? email.trim() : null }),
+        ...(relationship && { relationship }),
+        ...(status && { status }),
+      },
+    });
+
+    return successResponse(res, updated, 'Parent updated successfully');
   } catch (error) {
     next(error);
   }
@@ -369,5 +438,6 @@ module.exports = {
   getStudentById,
   createStudent,
   updateStudent,
+  updateParent,
   deleteStudent,
 };

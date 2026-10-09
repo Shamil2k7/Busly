@@ -10,7 +10,9 @@ import {
   KeyRound,
   Phone,
   Eye,
+  Edit,
   Trash2,
+  X,
   CheckCircle2,
 } from 'lucide-react';
 import AdminTopNav from '@/components/navigation/AdminTopNav';
@@ -59,6 +61,24 @@ export default function AdminStudentsPage() {
   });
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [createdResult, setCreatedResult] = useState(null);
+
+  // Edit Student Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    studentId: '',
+    class: '10',
+    division: 'A',
+    parentName: '',
+    parentMobile: '',
+    parentEmail: '',
+    relationship: 'FATHER',
+    busId: '',
+    feePlanId: '',
+    status: 'ACTIVE',
+  });
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   // Restore custom classes & divisions from localStorage
   useEffect(() => {
@@ -155,6 +175,70 @@ export default function AdminStudentsPage() {
     showToast(`Division "${val}" added successfully`, 'success');
     setNewDivisionName('');
     setIsAddDivisionModalOpen(false);
+  };
+
+  const handleDeleteClass = (clsToDelete) => {
+    if (!confirm(`Are you sure you want to remove Class "${clsToDelete}" from options?`)) return;
+    const updated = classes.filter((c) => c !== clsToDelete);
+    setClasses(updated);
+    try {
+      localStorage.setItem('busly_classes', JSON.stringify(updated));
+    } catch (e) {}
+    if (filterClass === clsToDelete) setFilterClass('');
+    if (formData.class === clsToDelete) setFormData((prev) => ({ ...prev, class: updated[0] || '10' }));
+    if (editFormData.class === clsToDelete) setEditFormData((prev) => ({ ...prev, class: updated[0] || '10' }));
+    showToast(`Class "${clsToDelete}" removed`, 'success');
+  };
+
+  const handleDeleteDivision = (divToDelete) => {
+    if (!confirm(`Are you sure you want to remove Division "${divToDelete}" from options?`)) return;
+    const updated = divisions.filter((d) => d !== divToDelete);
+    setDivisions(updated);
+    try {
+      localStorage.setItem('busly_divisions', JSON.stringify(updated));
+    } catch (e) {}
+    if (filterDivision === divToDelete) setFilterDivision('');
+    if (formData.division === divToDelete) setFormData((prev) => ({ ...prev, division: updated[0] || 'A' }));
+    if (editFormData.division === divToDelete) setEditFormData((prev) => ({ ...prev, division: updated[0] || 'A' }));
+    showToast(`Division "${divToDelete}" removed`, 'success');
+  };
+
+  const handleOpenEditStudent = (st) => {
+    setEditingStudent(st);
+    const primaryParent = st.family?.parents?.[0] || {};
+    setEditFormData({
+      name: st.name || '',
+      studentId: st.studentId || '',
+      class: st.class || '10',
+      division: st.division || 'A',
+      parentName: primaryParent.name || '',
+      parentMobile: primaryParent.mobile || '',
+      parentEmail: primaryParent.email || '',
+      relationship: primaryParent.relationship || 'FATHER',
+      busId: st.busId || st.bus?.id || '',
+      feePlanId: st.feePlanId || st.feePlan?.id || '',
+      status: st.status || 'ACTIVE',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateStudent = async (e) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+    setEditSubmitting(true);
+    try {
+      const res = await api.put(`/api/students/${editingStudent.id}`, editFormData);
+      if (res.success) {
+        showToast('Student details updated successfully', 'success');
+        setIsEditModalOpen(false);
+        setEditingStudent(null);
+        await loadData();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to update student', 'error');
+    } finally {
+      setEditSubmitting(false);
+    }
   };
 
   const handleCreateStudent = async (e) => {
@@ -333,16 +417,25 @@ export default function AdminStudentsPage() {
                       <td className="py-3.5 px-4 text-xs text-gray-600">
                         {st.feePlan?.name || 'Standard Plan'}
                       </td>
-                      <td className="py-3.5 px-4 text-right space-x-2">
+                      <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
                         <button
                           onClick={() => setSelectedStudent(st)}
-                          className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
+                          className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
+                          title="View details"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
+                          onClick={() => handleOpenEditStudent(st)}
+                          className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                          title="Edit student"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => handleDelete(st.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Delete student"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -640,6 +733,30 @@ export default function AdminStudentsPage() {
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+              Configured Classes ({classes.length}) • Click ✕ to remove
+            </label>
+            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 bg-gray-50 rounded-xl border border-gray-200">
+              {classes.map((cls) => (
+                <div
+                  key={cls}
+                  className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-800 shadow-sm"
+                >
+                  <span>Class {cls}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteClass(cls)}
+                    className="text-gray-400 hover:text-red-600 rounded p-0.5"
+                    title={`Delete Class ${cls}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
             <Button variant="outline" type="button" onClick={() => setIsAddClassModalOpen(false)}>
               Cancel
@@ -655,7 +772,7 @@ export default function AdminStudentsPage() {
       <Modal
         isOpen={isAddDivisionModalOpen}
         onClose={() => setIsAddDivisionModalOpen(false)}
-        title="Add New Division / Section"
+        title="Add / Manage Division or Section"
         subtitle="Define a section (e.g. A, B, C, D, or house/group names)"
       >
         <form onSubmit={handleAddDivisionSubmit} className="space-y-4">
@@ -686,6 +803,30 @@ export default function AdminStudentsPage() {
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+              Configured Divisions ({divisions.length}) • Click ✕ to remove
+            </label>
+            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 bg-gray-50 rounded-xl border border-gray-200">
+              {divisions.map((div) => (
+                <div
+                  key={div}
+                  className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-800 shadow-sm"
+                >
+                  <span>Division {div}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteDivision(div)}
+                    className="text-gray-400 hover:text-red-600 rounded p-0.5"
+                    title={`Delete Division ${div}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
             <Button variant="outline" type="button" onClick={() => setIsAddDivisionModalOpen(false)}>
               Cancel
@@ -696,6 +837,169 @@ export default function AdminStudentsPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Edit Student Modal */}
+      {editingStudent && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingStudent(null);
+          }}
+          title={`Edit Student: ${editingStudent.name}`}
+          subtitle={`Student ID: ${editingStudent.studentId} • Update details, class, transport, or parent contact`}
+          maxWidth="max-w-lg"
+        >
+          <form onSubmit={handleUpdateStudent} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Student Full Name"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                required
+              />
+              <Input
+                label="Student ID"
+                value={editFormData.studentId}
+                onChange={(e) => setEditFormData({ ...editFormData, studentId: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Class
+                </label>
+                <Select
+                  value={editFormData.class}
+                  onChange={(e) => setEditFormData({ ...editFormData, class: e.target.value })}
+                >
+                  {classes.map((c) => (
+                    <option key={c} value={c}>
+                      Class {c}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Division
+                </label>
+                <Select
+                  value={editFormData.division}
+                  onChange={(e) => setEditFormData({ ...editFormData, division: e.target.value })}
+                >
+                  {divisions.map((d) => (
+                    <option key={d} value={d}>
+                      Division {d}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 pt-3">
+              <p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                Parent / Guardian Information
+              </p>
+              <div className="space-y-3">
+                <Input
+                  label="Parent Name"
+                  value={editFormData.parentName}
+                  onChange={(e) => setEditFormData({ ...editFormData, parentName: e.target.value })}
+                  required
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Input
+                    label="Mobile Number (For OTP Login)"
+                    type="tel"
+                    value={editFormData.parentMobile}
+                    onChange={(e) => setEditFormData({ ...editFormData, parentMobile: e.target.value })}
+                    required
+                  />
+                  <Select
+                    label="Relationship"
+                    value={editFormData.relationship}
+                    onChange={(e) => setEditFormData({ ...editFormData, relationship: e.target.value })}
+                    options={[
+                      { value: 'FATHER', label: 'Father' },
+                      { value: 'MOTHER', label: 'Mother' },
+                      { value: 'GUARDIAN', label: 'Guardian' },
+                    ]}
+                  />
+                </div>
+                <Input
+                  label="Email (Optional)"
+                  type="email"
+                  value={editFormData.parentEmail}
+                  onChange={(e) => setEditFormData({ ...editFormData, parentEmail: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 pt-3">
+              <p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                Transport & Status
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Select
+                  label="Assigned Bus"
+                  value={editFormData.busId}
+                  onChange={(e) => setEditFormData({ ...editFormData, busId: e.target.value })}
+                >
+                  <option value="">Unassigned</option>
+                  {buses.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.busNumber}
+                    </option>
+                  ))}
+                </Select>
+
+                <Select
+                  label="Fee Plan"
+                  value={editFormData.feePlanId}
+                  onChange={(e) => setEditFormData({ ...editFormData, feePlanId: e.target.value })}
+                >
+                  <option value="">No Plan</option>
+                  {feePlans.map((fp) => (
+                    <option key={fp.id} value={fp.id}>
+                      {fp.name}
+                    </option>
+                  ))}
+                </Select>
+
+                <Select
+                  label="Status"
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                  options={[
+                    { value: 'ACTIVE', label: 'ACTIVE' },
+                    { value: 'INACTIVE', label: 'INACTIVE' },
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditingStudent(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" loading={editSubmitting}>
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }
