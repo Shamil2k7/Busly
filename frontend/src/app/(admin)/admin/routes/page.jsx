@@ -220,7 +220,7 @@ export default function AdminRoutesPage() {
         {/* Live Google Maps / Rapido / Instamart Route Corridor View */}
         {activeRoute && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <div className="flex items-center space-x-2">
                 <span className="text-xs font-black uppercase tracking-wider text-slate-800">
                   {activeRoute.name} Live Corridor
@@ -235,7 +235,7 @@ export default function AdminRoutesPage() {
                 type="button"
                 onClick={() => handleQuickAddFromCurrentLocation(activeRoute)}
                 disabled={isLocatingForQuickAdd}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-extrabold text-xs shadow-md transition-all active:scale-95"
+                className="flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-extrabold text-xs shadow-md transition-all active:scale-95"
               >
                 <LocateFixed className={`w-3.5 h-3.5 ${isLocatingForQuickAdd ? 'animate-spin' : ''}`} />
                 <span>{isLocatingForQuickAdd ? 'Detecting GPS...' : '+ Add Stop from Current Location'}</span>
@@ -247,7 +247,7 @@ export default function AdminRoutesPage() {
               bus={activeRoute.bus}
               route={activeRoute}
               stops={activeRoute.stops || []}
-              height="h-[460px] sm:h-[500px]"
+              height="h-[360px] sm:h-[500px]"
               onAddStopAtLocation={(loc) => {
                 handleOpenAddStopModal(activeRoute, {
                   latitude: loc.latitude,
@@ -263,8 +263,8 @@ export default function AdminRoutesPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Active Route Stops List */}
           <div className="lg:col-span-2 space-y-4">
-            <Card className="p-5">
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+            <Card className="p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
                 <div>
                   <h3 className="font-extrabold text-gray-900 text-base flex items-center space-x-2">
                     <span>Sequenced Waypoints & Stops</span>
@@ -277,7 +277,7 @@ export default function AdminRoutesPage() {
                   </p>
                 </div>
 
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => handleQuickAddFromCurrentLocation(activeRoute)}
                     className="flex items-center space-x-1 text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-xl border border-amber-200"

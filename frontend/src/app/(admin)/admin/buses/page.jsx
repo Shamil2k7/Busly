@@ -67,14 +67,15 @@ export default function AdminBusesPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Fleet & Bus Management" subtitle="Manage School Buses, Drivers & Capacities" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
-        <div className="flex justify-between items-center">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
             Total Fleet: {buses.length} Vehicles
           </p>
           <Button
             variant="primary"
             size="sm"
+            className="w-full sm:w-auto"
             onClick={() => {
               setFormData({
                 busNumber: `BUS 0${buses.length + 1}`,
@@ -91,7 +92,7 @@ export default function AdminBusesPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {buses.map((bus) => (
             <Card key={bus.id} className="p-5 flex flex-col justify-between">
               <div>
@@ -164,7 +165,7 @@ export default function AdminBusesPage() {
         subtitle="Add a vehicle to your school transport fleet"
       >
         <form onSubmit={handleCreate} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Bus Number"
               placeholder="e.g. BUS 03"
@@ -181,7 +182,7 @@ export default function AdminBusesPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Seating Capacity"
               type="number"

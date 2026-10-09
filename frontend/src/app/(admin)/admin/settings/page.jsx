@@ -50,7 +50,7 @@ export default function AdminSettingsPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="School Transport Settings" subtitle="Institution Profile, Contact & Busly Integration" />
 
-      <main className="p-6 space-y-6 max-w-4xl">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-4xl">
         <Card>
           <CardHeader
             title="School Profile Information"
@@ -59,7 +59,7 @@ export default function AdminSettingsPage() {
           <CardContent>
             {school ? (
               <form onSubmit={handleSave} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="School Name"
                     value={school.name || ''}
@@ -89,7 +89,7 @@ export default function AdminSettingsPage() {
                   onChange={(e) => setSchool({ ...school, address: e.target.value })}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Emergency Transport Phone"
                     icon={Phone}
@@ -106,7 +106,7 @@ export default function AdminSettingsPage() {
                 </div>
 
                 <div className="pt-3 border-t border-gray-100 flex justify-end">
-                  <Button type="submit" variant="primary" loading={saving}>
+                  <Button type="submit" variant="primary" className="w-full sm:w-auto" loading={saving}>
                     <Save className="w-4 h-4 mr-1.5" /> Save Changes
                   </Button>
                 </div>

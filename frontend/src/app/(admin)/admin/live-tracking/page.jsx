@@ -43,7 +43,7 @@ export default function AdminLiveTrackingPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Live Fleet Telemetry Command" subtitle="Real-Time Bus GPS Tracking" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
         {/* Bus Selector Bar */}
         <div className="flex items-center space-x-3 overflow-x-auto pb-1">
           {buses.map((bus) => {
@@ -85,7 +85,7 @@ export default function AdminLiveTrackingPage() {
               bus={selectedBus}
               route={selectedBus?.route}
               stops={selectedBus?.route?.stops || []}
-              height="h-[520px]"
+              height="h-[380px] sm:h-[520px]"
             />
           </div>
 

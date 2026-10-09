@@ -34,10 +34,10 @@ export default function AdminPaymentsPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Payments & Digital Receipts" subtitle="Transport Collection Ledger & Audit Trail" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
         <Card>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm">
+            <table className="w-full text-left text-xs sm:text-sm min-w-[700px]">
               <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider font-semibold text-[11px]">
                 <tr>
                   <th className="py-3 px-4">Receipt #</th>

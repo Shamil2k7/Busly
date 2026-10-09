@@ -105,10 +105,10 @@ export default function AdminStudentsPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Students Directory" subtitle="Manage Enrolled Transport Passengers" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-          <div className="flex flex-1 items-center space-x-3">
-            <div className="w-72">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-3">
+            <div className="w-full sm:w-72">
               <Input
                 icon={Search}
                 placeholder="Search by student name or ID..."
@@ -116,7 +116,7 @@ export default function AdminStudentsPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="w-36">
+            <div className="w-full sm:w-36">
               <Select
                 value={filterClass}
                 onChange={(e) => setFilterClass(e.target.value)}
@@ -134,6 +134,7 @@ export default function AdminStudentsPage() {
 
           <Button
             variant="primary"
+            className="w-full sm:w-auto"
             onClick={() => {
               setCreatedResult(null);
               setFormData({
@@ -158,7 +159,7 @@ export default function AdminStudentsPage() {
         {/* Student Table */}
         <Card>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm">
+            <table className="w-full text-left text-xs sm:text-sm min-w-[700px]">
               <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider font-semibold text-[11px]">
                 <tr>
                   <th className="py-3 px-4">Student</th>
@@ -269,7 +270,7 @@ export default function AdminStudentsPage() {
           </div>
         ) : (
           <form onSubmit={handleCreateStudent} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="Student Full Name"
                 placeholder="e.g. Maya Nair"
@@ -285,7 +286,7 @@ export default function AdminStudentsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select
                 label="Class"
                 value={formData.class}
@@ -322,7 +323,7 @@ export default function AdminStudentsPage() {
                   onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
                   required
                 />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
                     label="Mobile Number (For OTP)"
                     type="tel"
@@ -349,7 +350,7 @@ export default function AdminStudentsPage() {
               <p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                 Transport & Fee Allocation
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Select
                   label="Assigned Bus"
                   value={formData.busId}

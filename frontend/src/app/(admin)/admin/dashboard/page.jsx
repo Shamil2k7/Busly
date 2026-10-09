@@ -52,12 +52,12 @@ export default function AdminDashboardPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Transport Operations Dashboard" subtitle="Real-time School Fleet Command" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
         {/* Active Emergency Alert Banner if any */}
         {data?.activeAlerts && data.activeAlerts.length > 0 && (
-          <div className="bg-red-50 border-2 border-red-500 rounded-2xl p-4 flex items-center justify-between shadow-sm animate-pulse">
+          <div className="bg-red-50 border-2 border-red-500 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm animate-pulse">
             <div className="flex items-center space-x-3">
-              <div className="p-2.5 bg-red-600 text-white rounded-xl">
+              <div className="p-2.5 bg-red-600 text-white rounded-xl flex-shrink-0">
                 <ShieldAlert className="w-6 h-6" />
               </div>
               <div>
@@ -69,7 +69,7 @@ export default function AdminDashboardPage() {
                 </p>
               </div>
             </div>
-            <Link href="/admin/emergency">
+            <Link href="/admin/emergency" className="self-end sm:self-auto">
               <Button variant="danger" size="sm">
                 Open Emergency Center
               </Button>
@@ -78,59 +78,59 @@ export default function AdminDashboardPage() {
         )}
 
         {/* Primary Metric Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-gray-500 mb-2">
               <span className="text-xs font-semibold">Total Students</span>
               <Users className="w-4 h-4 text-amber-500" />
             </div>
-            <p className="text-2xl font-black text-gray-900">{metrics.totalStudents ?? '--'}</p>
-            <p className="text-[11px] text-gray-400 mt-1">Enrolled passengers</p>
+            <p className="text-xl sm:text-2xl font-black text-gray-900">{metrics.totalStudents ?? '--'}</p>
+            <p className="text-[11px] text-gray-400 mt-1 truncate">Enrolled passengers</p>
           </Card>
 
-          <Card className="p-4">
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-gray-500 mb-2">
               <span className="text-xs font-semibold">Active Fleet</span>
               <Bus className="w-4 h-4 text-emerald-500" />
             </div>
-            <p className="text-2xl font-black text-gray-900">{metrics.activeBuses ?? '--'}</p>
-            <p className="text-[11px] text-emerald-600 font-semibold mt-1">Operational</p>
+            <p className="text-xl sm:text-2xl font-black text-gray-900">{metrics.activeBuses ?? '--'}</p>
+            <p className="text-[11px] text-emerald-600 font-semibold mt-1 truncate">Operational</p>
           </Card>
 
-          <Card className="p-4">
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-gray-500 mb-2">
               <span className="text-xs font-semibold">Active Drivers</span>
               <UserCheck className="w-4 h-4 text-blue-500" />
             </div>
-            <p className="text-2xl font-black text-gray-900">{metrics.activeDrivers ?? '--'}</p>
-            <p className="text-[11px] text-gray-400 mt-1">Licensed drivers</p>
+            <p className="text-xl sm:text-2xl font-black text-gray-900">{metrics.activeDrivers ?? '--'}</p>
+            <p className="text-[11px] text-gray-400 mt-1 truncate">Licensed drivers</p>
           </Card>
 
-          <Card className="p-4">
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-gray-500 mb-2">
               <span className="text-xs font-semibold">Today's Trips</span>
               <CalendarCheck className="w-4 h-4 text-purple-500" />
             </div>
-            <p className="text-2xl font-black text-gray-900">{metrics.todayTripsCount ?? '--'}</p>
-            <p className="text-[11px] text-gray-400 mt-1">Morning & afternoon</p>
+            <p className="text-xl sm:text-2xl font-black text-gray-900">{metrics.todayTripsCount ?? '--'}</p>
+            <p className="text-[11px] text-gray-400 mt-1 truncate">Morning & afternoon</p>
           </Card>
 
-          <Card className="p-4">
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-gray-500 mb-2">
               <span className="text-xs font-semibold">Collected Fees</span>
               <Receipt className="w-4 h-4 text-emerald-600" />
             </div>
-            <p className="text-2xl font-black text-gray-900">₹{metrics.collectedFees ?? 0}</p>
-            <p className="text-[11px] text-emerald-600 font-semibold mt-1">Settled payments</p>
+            <p className="text-xl sm:text-2xl font-black text-gray-900">₹{metrics.collectedFees ?? 0}</p>
+            <p className="text-[11px] text-emerald-600 font-semibold mt-1 truncate">Settled payments</p>
           </Card>
 
-          <Card className="p-4">
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-gray-500 mb-2">
               <span className="text-xs font-semibold">Pending Fees</span>
               <CreditCard className="w-4 h-4 text-red-500" />
             </div>
-            <p className="text-2xl font-black text-gray-900">{metrics.pendingFeesCount ?? '--'}</p>
-            <p className="text-[11px] text-red-500 font-semibold mt-1">Due for collection</p>
+            <p className="text-xl sm:text-2xl font-black text-gray-900">{metrics.pendingFeesCount ?? '--'}</p>
+            <p className="text-[11px] text-red-500 font-semibold mt-1 truncate">Due for collection</p>
           </Card>
         </div>
 
@@ -149,7 +149,7 @@ export default function AdminDashboardPage() {
                   </Link>
                 }
               />
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <LiveBusMap
                   bus={data?.liveBuses?.[0]}
                   route={data?.liveBuses?.[0]?.route}
@@ -159,7 +159,7 @@ export default function AdminDashboardPage() {
                     { id: '3', name: 'Market Junction', latitude: 11.2890, longitude: 76.2415, sequence: 3 },
                     { id: '4', name: 'ABC Public School Gate', latitude: 11.2950, longitude: 76.2500, sequence: 4 },
                   ]}
-                  height="h-80"
+                  height="h-64 sm:h-80"
                 />
               </CardContent>
             </Card>
@@ -185,20 +185,20 @@ export default function AdminDashboardPage() {
                     </div>
                   ) : (
                     data.todayTrips.map((trip) => (
-                      <div key={trip.id} className="p-4 flex items-center justify-between hover:bg-gray-50/60">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center font-bold text-amber-900 text-xs">
+                      <div key={trip.id} className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-gray-50/60">
+                        <div className="flex items-center space-x-3 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center font-bold text-amber-900 text-xs flex-shrink-0">
                             {trip.bus?.busNumber}
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-gray-900">{trip.route?.name}</p>
-                            <p className="text-[11px] text-gray-500">
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-gray-900 truncate">{trip.route?.name}</p>
+                            <p className="text-[11px] text-gray-500 truncate">
                               Driver: {trip.driver?.name} ({trip.driver?.mobile}) • {trip.type}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center justify-between sm:justify-end space-x-3 flex-shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                           <Badge
                             variant={trip.status === 'ACTIVE' ? 'success' : trip.status === 'COMPLETED' ? 'default' : 'warning'}
                             size="sm"

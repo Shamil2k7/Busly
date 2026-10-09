@@ -54,8 +54,8 @@ export default function AdminParentsPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Parents & Families" subtitle="Family Codes & Parent Guardian Access Directory" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
-        <div className="w-80">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
+        <div className="w-full sm:w-80">
           <Input
             icon={Search}
             placeholder="Search by family code, parent, or student..."
@@ -64,7 +64,7 @@ export default function AdminParentsPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {families.map((fam) => (
             <Card key={fam.familyCode} className="p-5 flex flex-col justify-between">
               <div>

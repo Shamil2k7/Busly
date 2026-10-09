@@ -60,8 +60,8 @@ export default function AdminNotificationsPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Notification Broadcast Center" subtitle="School Announcements & Transport Alerts" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Announcement Composer */}
           <div className="lg:col-span-1">
             <Card>

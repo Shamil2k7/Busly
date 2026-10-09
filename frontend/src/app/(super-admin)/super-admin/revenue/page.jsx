@@ -26,27 +26,27 @@ export default function SuperAdminRevenuePage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Platform Revenue Intelligence" subtitle="SaaS Transaction Flow & Volume" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="p-5">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+          <Card className="p-4 sm:p-5">
             <h3 className="font-bold text-gray-900 text-sm mb-1">Total Processed Volume</h3>
-            <p className="text-3xl font-black text-emerald-600 my-2">
+            <p className="text-2xl sm:text-3xl font-black text-emerald-600 my-2">
               ₹{data?.totalRevenue || 0}
             </p>
             <p className="text-xs text-gray-500">Across all tenant schools</p>
           </Card>
 
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <h3 className="font-bold text-gray-900 text-sm mb-1">Active Subscriptions</h3>
-            <p className="text-3xl font-black text-amber-500 my-2">
+            <p className="text-2xl sm:text-3xl font-black text-amber-500 my-2">
               {data?.activeSchools || 0} Schools
             </p>
             <p className="text-xs text-gray-500">Generating platform recurring licenses</p>
           </Card>
 
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <h3 className="font-bold text-gray-900 text-sm mb-1">SaaS Platform Fee (1.5%)</h3>
-            <p className="text-3xl font-black text-gray-900 my-2">
+            <p className="text-2xl sm:text-3xl font-black text-gray-900 my-2">
               ₹{Math.round((data?.totalRevenue || 0) * 0.015)}
             </p>
             <p className="text-xs text-gray-500">Platform take rate on transport pass transactions</p>
@@ -66,14 +66,14 @@ export default function SuperAdminRevenuePage() {
                 </div>
               ) : (
                 data.recentPayments.map((p) => (
-                  <div key={p.id} className="p-4 flex items-center justify-between text-xs sm:text-sm">
-                    <div>
-                      <p className="font-bold text-gray-900">{p.school?.name}</p>
-                      <p className="font-mono text-xs text-gray-400">
+                  <div key={p.id} className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs sm:text-sm">
+                    <div className="min-w-0">
+                      <p className="font-bold text-gray-900 truncate">{p.school?.name}</p>
+                      <p className="font-mono text-xs text-gray-400 truncate">
                         Ref: {p.paymentReference} • Receipt: {p.receiptNumber}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right flex-shrink-0">
                       <p className="font-black text-emerald-600 text-base">₹{p.amount}</p>
                       <p className="text-[11px] text-gray-500">{new Date(p.paidAt).toLocaleDateString()}</p>
                     </div>

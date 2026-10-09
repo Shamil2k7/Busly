@@ -29,8 +29,8 @@ export default function AdminReportsPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Transport Reports & Analytics" subtitle="Fleet Efficiency & Fee Reconciliation Audits" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           <Card className="p-5">
             <h3 className="font-bold text-gray-900 text-sm mb-1">Fee Collection Rate</h3>
             <p className="text-3xl font-black text-emerald-600 my-2">

@@ -218,9 +218,9 @@ export default function SuperAdminSchoolsPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="School Tenant Provisioning" subtitle="Manage Multi-Tenant Schools, School Details & Administrators" />
 
-      <main className="p-4 sm:p-6 space-y-6 max-w-7xl">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
         {/* Top Control Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
           <div className="relative w-full sm:w-72">
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -239,6 +239,7 @@ export default function SuperAdminSchoolsPage() {
             <Button
               variant="primary"
               size="sm"
+              className="w-full sm:w-auto"
               onClick={() => {
                 setProvisionForm({
                   name: '',
@@ -317,7 +318,7 @@ export default function SuperAdminSchoolsPage() {
                   </div>
 
                   {/* Operational Metrics Bar */}
-                  <div className="grid grid-cols-4 gap-2 text-center mt-3 pt-3 border-t border-gray-100 text-[11px]">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center mt-3 pt-3 border-t border-gray-100 text-[11px]">
                     <div className="bg-slate-50 p-1.5 rounded-xl">
                       <span className="font-black text-gray-900 block">{school._count?.students || 0}</span>
                       <span className="text-gray-400 text-[10px]">Students</span>
@@ -401,7 +402,7 @@ export default function SuperAdminSchoolsPage() {
             required
           />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Unique School Code"
               placeholder="e.g. STMARY"
@@ -428,7 +429,7 @@ export default function SuperAdminSchoolsPage() {
             onChange={(e) => setProvisionForm({ ...provisionForm, address: e.target.value })}
           />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Contact Phone"
               placeholder="+91 9876543210"
@@ -470,7 +471,7 @@ export default function SuperAdminSchoolsPage() {
             required
           />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="School Code (Tenant ID)"
               value={editForm.code}
@@ -489,7 +490,7 @@ export default function SuperAdminSchoolsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Select
               label="Tenant Status"
               value={editForm.status}

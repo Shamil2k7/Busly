@@ -186,34 +186,34 @@ export default function SuperAdminSchoolDetailPage() {
         subtitle={`Tenant Code: ${school.code} • Plan: ${school.subscriptionPlan}`}
       />
 
-      <main className="p-4 sm:p-6 space-y-6 max-w-7xl">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
         {/* Back Navigation & Status Banner */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex items-center space-x-3">
-            <Link href="/super-admin/schools">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center space-x-3 min-w-0">
+            <Link href="/super-admin/schools" className="flex-shrink-0">
               <Button variant="outline" size="sm" className="h-9 px-3">
                 <ArrowLeft className="w-4 h-4 mr-1" /> Schools
               </Button>
             </Link>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center space-x-2">
-                <h2 className="text-lg font-black text-gray-900">{school.name}</h2>
-                <Badge variant={school.status === 'ACTIVE' ? 'success' : 'danger'} size="sm">
+                <h2 className="text-base sm:text-lg font-black text-gray-900 truncate">{school.name}</h2>
+                <Badge variant={school.status === 'ACTIVE' ? 'success' : 'danger'} size="sm" className="flex-shrink-0">
                   {school.status}
                 </Badge>
               </div>
-              <p className="text-xs text-gray-500 font-mono mt-0.5">
+              <p className="text-xs text-gray-500 font-mono mt-0.5 truncate">
                 School Code: <span className="font-bold text-amber-700">{school.code}</span> • Created: {new Date(school.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 w-full sm:w-auto">
             <Button
               variant="primary"
               size="sm"
               onClick={() => setIsAddAdminModalOpen(true)}
-              className="bg-slate-900 hover:bg-slate-800 text-white"
+              className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white"
             >
               <UserPlus className="w-4 h-4 mr-1.5 text-amber-400" /> + Add School Admin
             </Button>
@@ -221,25 +221,25 @@ export default function SuperAdminSchoolDetailPage() {
         </div>
 
         {/* Operational Metrics Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
-            <span className="text-2xl font-black text-gray-900 block">{school._count?.students || 0}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <span className="text-xl sm:text-2xl font-black text-gray-900 block">{school._count?.students || 0}</span>
             <span className="text-xs text-gray-500 font-medium">Students</span>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
-            <span className="text-2xl font-black text-gray-900 block">{school._count?.buses || 0}</span>
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <span className="text-xl sm:text-2xl font-black text-gray-900 block">{school._count?.buses || 0}</span>
             <span className="text-xs text-gray-500 font-medium">Buses</span>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
-            <span className="text-2xl font-black text-gray-900 block">{school._count?.drivers || 0}</span>
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <span className="text-xl sm:text-2xl font-black text-gray-900 block">{school._count?.drivers || 0}</span>
             <span className="text-xs text-gray-500 font-medium">Drivers</span>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
-            <span className="text-2xl font-black text-gray-900 block">{school._count?.teachers || 0}</span>
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <span className="text-xl sm:text-2xl font-black text-gray-900 block">{school._count?.teachers || 0}</span>
             <span className="text-xs text-gray-500 font-medium">Teachers</span>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center col-span-2 sm:col-span-1">
-            <span className="text-2xl font-black text-gray-900 block">{admins.length}</span>
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-100 shadow-sm text-center col-span-2 sm:col-span-1">
+            <span className="text-xl sm:text-2xl font-black text-gray-900 block">{admins.length}</span>
             <span className="text-xs text-gray-500 font-medium">School Admins</span>
           </div>
         </div>
@@ -248,7 +248,7 @@ export default function SuperAdminSchoolDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* LEFT: Edit School Details Form */}
           <div className="lg:col-span-7">
-            <Card className="p-6">
+            <Card className="p-4 sm:p-6">
               <CardHeader
                 title="Edit School Details"
                 subtitle="Update school identity, code, subscription plan, and campus information"

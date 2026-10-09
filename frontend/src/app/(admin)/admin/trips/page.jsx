@@ -87,14 +87,15 @@ export default function AdminTripsPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Trip Management" subtitle="Schedule, Monitor & Close Bus Runs" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
-        <div className="flex justify-between items-center">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
             Total Trips Logged: {trips.length}
           </p>
           <Button
             variant="primary"
             size="sm"
+            className="w-full sm:w-auto"
             onClick={() => {
               setForm({
                 busId: buses[0]?.id || '',
@@ -110,7 +111,7 @@ export default function AdminTripsPage() {
 
         <Card>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm">
+            <table className="w-full text-left text-xs sm:text-sm min-w-[650px]">
               <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider font-semibold text-[11px]">
                 <tr>
                   <th className="py-3 px-4">Bus & Run</th>

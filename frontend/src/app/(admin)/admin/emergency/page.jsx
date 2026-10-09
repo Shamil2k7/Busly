@@ -62,12 +62,12 @@ export default function AdminEmergencyPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Emergency & SOS Command Center" subtitle="Real-time Driver Incident Response" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
         {/* Active Emergency Banner */}
         {activeAlerts.length > 0 && (
-          <div className="bg-red-50 border-2 border-red-500 rounded-2xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center space-x-3 text-red-900 font-extrabold text-base sm:text-lg">
-              <ShieldAlert className="w-7 h-7 text-red-600 animate-bounce" />
+          <div className="bg-red-50 border-2 border-red-500 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+            <div className="flex items-center space-x-2 sm:space-x-3 text-red-900 font-extrabold text-sm sm:text-base">
+              <ShieldAlert className="w-6 h-6 sm:w-7 sm:h-7 text-red-600 animate-bounce flex-shrink-0" />
               <span>URGENT: {activeAlerts.length} ACTIVE SOS INCIDENT(S) IN PROGRESS</span>
             </div>
 
@@ -104,11 +104,11 @@ export default function AdminEmergencyPage() {
                     </p>
                   </div>
 
-                  <div className="flex space-x-2 pt-1">
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
                     <Button
                       variant="primary"
                       size="sm"
-                      className="flex-1"
+                      className="w-full sm:flex-1"
                       onClick={() => handleUpdateStatus(alert.id, 'ACKNOWLEDGED')}
                     >
                       Acknowledge Response
@@ -116,7 +116,7 @@ export default function AdminEmergencyPage() {
                     <Button
                       variant="success"
                       size="sm"
-                      className="flex-1"
+                      className="w-full sm:flex-1"
                       onClick={() => handleUpdateStatus(alert.id, 'RESOLVED')}
                     >
                       Mark Resolved

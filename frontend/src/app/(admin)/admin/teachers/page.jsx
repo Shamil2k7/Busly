@@ -56,14 +56,15 @@ export default function AdminTeachersPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Teacher Directory" subtitle="Manage Teaching Staff & Student Add Permissions" />
 
-      <main className="p-6 space-y-6 max-w-7xl">
-        <div className="flex justify-between items-center">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
             Total Teachers: {teachers.length}
           </p>
           <Button
             variant="primary"
             size="sm"
+            className="w-full sm:w-auto"
             onClick={() => {
               setForm({
                 name: '',
@@ -79,7 +80,7 @@ export default function AdminTeachersPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {teachers.map((t) => (
             <Card key={t.id} className="p-5 flex flex-col justify-between">
               <div>

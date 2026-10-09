@@ -21,7 +21,7 @@ export default function SuperAdminSettingsPage() {
     <div className="flex-1 flex flex-col">
       <AdminTopNav title="Platform Global Configuration" subtitle="SaaS Gateway & System Defaults" />
 
-      <main className="p-6 space-y-6 max-w-3xl">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-3xl">
         <Card>
           <CardHeader title="SaaS Gateway Configuration" />
           <CardContent>
@@ -43,7 +43,7 @@ export default function SuperAdminSettingsPage() {
                 onChange={(e) => setSupportEmail(e.target.value)}
               />
 
-              <Button type="submit" variant="primary">
+              <Button type="submit" variant="primary" className="w-full sm:w-auto">
                 Save Global Config
               </Button>
             </form>
