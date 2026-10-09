@@ -150,9 +150,40 @@ export default function ParentHomePage() {
                       {selectedChild.pickupStop?.name || 'Main Road Junction'}
                     </span>
                   </div>
-                  <span className="font-mono text-gray-500 text-[11px]">
-                    {selectedChild.pickupStop?.estimatedArrival || '07:45 AM'}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono text-gray-500 text-[11px]">
+                      {selectedChild.pickupStop?.estimatedArrival || '07:45 AM'}
+                    </span>
+                    <Link
+                      href="/parent/children"
+                      className="text-[11px] font-bold text-amber-600 hover:text-amber-700 underline"
+                      title="Edit pickup stop"
+                    >
+                      Change
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-200/40">
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                    <span>Drop Stop:</span>
+                    <span className="font-bold text-gray-900">
+                      {selectedChild.dropStop?.name || 'School Gate'}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono text-gray-500 text-[11px]">
+                      {selectedChild.dropStop?.estimatedArrival || '03:45 PM'}
+                    </span>
+                    <Link
+                      href="/parent/children"
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-700 underline"
+                      title="Edit drop stop"
+                    >
+                      Change
+                    </Link>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-200/40">

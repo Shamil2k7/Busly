@@ -12,7 +12,8 @@ router.get('/', studentController.getStudents);
 router.get('/:id', studentController.getStudentById);
 router.post('/', requireRole(['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER']), studentController.createStudent);
 router.put('/parents/:parentId', requireRole(['SUPER_ADMIN', 'SCHOOL_ADMIN']), studentController.updateParent);
-router.put('/:id', requireRole(['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER']), studentController.updateStudent);
+router.put('/:id/stops', requireRole(['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'PARENT']), studentController.updateStudentStops);
+router.put('/:id', requireRole(['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'PARENT']), studentController.updateStudent);
 router.delete('/:id', requireRole(['SUPER_ADMIN', 'SCHOOL_ADMIN']), studentController.deleteStudent);
 
 module.exports = router;

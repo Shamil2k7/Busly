@@ -316,6 +316,10 @@ const updateStudent = async (req, res, next) => {
       return errorResponse(res, 'Student not found', 404);
     }
 
+    if (req.user.role === 'PARENT' && existing.familyId !== req.user.familyId) {
+      return errorResponse(res, 'Unauthorized to modify this student', 403);
+    }
+
     const updated = await prisma.student.update({
       where: { id },
       data: {
@@ -408,6 +412,56 @@ const updateParent = async (req, res, next) => {
 };
 
 /**
+ * Update Student Pickup and Drop Stops (Parent or Admin)
+ * PUT /api/students/:id/stops
+ */
+const updateStudentStops = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const schoolId = req.targetSchoolId;
+    const { pickupStopId, dropStopId } = req.body;
+
+    const student = await prisma.student.findFirst({
+      where: { id, schoolId },
+    });
+    if (!student) {
+      return errorResponse(res, 'Student not found', 404);
+    }
+
+    if (req.user.role === 'PARENT' && student.familyId !== req.user.familyId) {
+      return errorResponse(res, 'Unauthorized to modify stops for this student', 403);
+    }
+
+    if (pickupStopId) {
+      const pStop = await prisma.stop.findUnique({ where: { id: pickupStopId } });
+      if (!pStop) return errorResponse(res, 'Pickup stop not found', 404);
+    }
+
+    if (dropStopId) {
+      const dStop = await prisma.stop.findUnique({ where: { id: dropStopId } });
+      if (!dStop) return errorResponse(res, 'Drop stop not found', 404);
+    }
+
+    const updated = await prisma.student.update({
+      where: { id },
+      data: {
+        ...(pickupStopId !== undefined && { pickupStopId: pickupStopId || null }),
+        ...(dropStopId !== undefined && { dropStopId: dropStopId || null }),
+      },
+      include: {
+        bus: true,
+        pickupStop: true,
+        dropStop: true,
+      },
+    });
+
+    return successResponse(res, updated, 'Pickup and drop stops updated successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Delete Student
  * DELETE /api/students/:id
  */
@@ -438,6 +492,7 @@ module.exports = {
   getStudentById,
   createStudent,
   updateStudent,
+  updateStudentStops,
   updateParent,
   deleteStudent,
 };

@@ -29,6 +29,7 @@ export default function AdminStudentsPage() {
   const [students, setStudents] = useState([]);
   const [buses, setBuses] = useState([]);
   const [feePlans, setFeePlans] = useState([]);
+  const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterClass, setFilterClass] = useState('');
@@ -57,6 +58,8 @@ export default function AdminStudentsPage() {
     parentEmail: '',
     relationship: 'FATHER',
     busId: '',
+    pickupStopId: '',
+    dropStopId: '',
     feePlanId: '',
   });
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -75,6 +78,8 @@ export default function AdminStudentsPage() {
     parentEmail: '',
     relationship: 'FATHER',
     busId: '',
+    pickupStopId: '',
+    dropStopId: '',
     feePlanId: '',
     status: 'ACTIVE',
   });
@@ -111,10 +116,11 @@ export default function AdminStudentsPage() {
 
       const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
-      const [stRes, bRes, fpRes] = await Promise.all([
+      const [stRes, bRes, fpRes, rRes] = await Promise.all([
         api.get(`/api/students${queryString}`),
         api.get('/api/buses'),
         api.get('/api/fees/plans'),
+        api.get('/api/routes'),
       ]);
 
       if (stRes.success && stRes.data) {
@@ -130,6 +136,7 @@ export default function AdminStudentsPage() {
       }
       if (bRes.success) setBuses(bRes.data);
       if (fpRes.success) setFeePlans(fpRes.data);
+      if (rRes?.success) setRoutes(rRes.data || []);
     } catch (err) {
       showToast('Failed to load students', 'error');
     } finally {
@@ -216,6 +223,8 @@ export default function AdminStudentsPage() {
       parentEmail: primaryParent.email || '',
       relationship: primaryParent.relationship || 'FATHER',
       busId: st.busId || st.bus?.id || '',
+      pickupStopId: st.pickupStopId || st.pickupStop?.id || '',
+      dropStopId: st.dropStopId || st.dropStop?.id || '',
       feePlanId: st.feePlanId || st.feePlan?.id || '',
       status: st.status || 'ACTIVE',
     });
@@ -641,6 +650,49 @@ export default function AdminStudentsPage() {
                   ))}
                 </Select>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Morning Pickup Stop
+                  </label>
+                  <Select
+                    value={formData.pickupStopId}
+                    onChange={(e) => setFormData({ ...formData, pickupStopId: e.target.value })}
+                  >
+                    <option value="">Default (School Gate)</option>
+                    {routes.map((route) => (
+                      <optgroup key={route.id} label={`${route.name} (${route.bus?.busNumber || 'Bus'})`}>
+                        {(route.stops || []).map((stop) => (
+                          <option key={stop.id} value={stop.id}>
+                            Stop {stop.sequence}: {stop.name} {stop.estimatedArrival ? `• ${stop.estimatedArrival}` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Evening Drop-off Stop
+                  </label>
+                  <Select
+                    value={formData.dropStopId}
+                    onChange={(e) => setFormData({ ...formData, dropStopId: e.target.value })}
+                  >
+                    <option value="">Default (School Gate)</option>
+                    {routes.map((route) => (
+                      <optgroup key={route.id} label={`${route.name} (${route.bus?.busNumber || 'Bus'})`}>
+                        {(route.stops || []).map((stop) => (
+                          <option key={stop.id} value={stop.id}>
+                            Stop {stop.sequence}: {stop.name} {stop.estimatedArrival ? `• ${stop.estimatedArrival}` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </Select>
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
@@ -979,6 +1031,50 @@ export default function AdminStudentsPage() {
                     { value: 'INACTIVE', label: 'INACTIVE' },
                   ]}
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Morning Pickup Stop
+                  </label>
+                  <Select
+                    value={editFormData.pickupStopId}
+                    onChange={(e) => setEditFormData({ ...editFormData, pickupStopId: e.target.value })}
+                  >
+                    <option value="">Default (School Gate)</option>
+                    {routes.map((route) => (
+                      <optgroup key={route.id} label={`${route.name} (${route.bus?.busNumber || 'Bus'})`}>
+                        {(route.stops || []).map((stop) => (
+                          <option key={stop.id} value={stop.id}>
+                            Stop {stop.sequence}: {stop.name} {stop.estimatedArrival ? `• ${stop.estimatedArrival}` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Evening Drop-off Stop
+                  </label>
+                  <Select
+                    value={editFormData.dropStopId}
+                    onChange={(e) => setEditFormData({ ...editFormData, dropStopId: e.target.value })}
+                  >
+                    <option value="">Default (School Gate)</option>
+                    {routes.map((route) => (
+                      <optgroup key={route.id} label={`${route.name} (${route.bus?.busNumber || 'Bus'})`}>
+                        {(route.stops || []).map((stop) => (
+                          <option key={stop.id} value={stop.id}>
+                            Stop {stop.sequence}: {stop.name} {stop.estimatedArrival ? `• ${stop.estimatedArrival}` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </Select>
+                </div>
               </div>
             </div>
 
