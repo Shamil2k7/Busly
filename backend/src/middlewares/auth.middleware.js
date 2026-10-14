@@ -24,7 +24,7 @@ const authenticate = async (req, res, next) => {
 
     // Handle PARENT role (who doesn't have a direct User record, but is anchored to a Family)
     if (decoded.role === 'PARENT') {
-      const parent = await prisma.parent.findFirst({
+      let parent = await prisma.parent.findFirst({
         where: {
           id: decoded.parentId,
           familyId: decoded.familyId,
@@ -36,6 +36,20 @@ const authenticate = async (req, res, next) => {
           school: true,
         },
       });
+
+      if (!parent && decoded.familyId) {
+        parent = await prisma.parent.findFirst({
+          where: {
+            familyId: decoded.familyId,
+            schoolId: decoded.schoolId,
+            status: 'ACTIVE',
+          },
+          include: {
+            family: true,
+            school: true,
+          },
+        });
+      }
 
       if (!parent) {
         return errorResponse(res, 'Parent profile not found or inactive.', 401);

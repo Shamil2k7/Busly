@@ -6,6 +6,7 @@ const { authLimiter, otpLimiter } = require('../middlewares/rateLimiter.middlewa
 
 // Public routes
 router.post('/login', authLimiter, authController.loginAdmin);
+router.post('/family-login', authLimiter, authController.loginByFamilyCode);
 router.post('/otp/request', otpLimiter, authController.requestOtp);
 router.post('/otp/verify', authLimiter, authController.verifyOtp);
 

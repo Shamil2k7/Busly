@@ -127,34 +127,54 @@ const requestOtp = async (req, res, next) => {
         return errorResponse(res, 'Mobile number not registered as an active driver in this school', 404);
       }
     } else if (role === 'PARENT') {
-      if (!familyCode) {
-        return errorResponse(res, 'Family Code is required for parent login', 400);
-      }
+      let familyId = null;
 
-      const formattedFamilyCode = familyCode.trim().toUpperCase();
-      const family = await prisma.family.findFirst({
-        where: {
-          schoolId: school.id,
-          familyCode: formattedFamilyCode,
-          status: 'ACTIVE',
-        },
-      });
+      if (familyCode && familyCode.trim()) {
+        const formattedFamilyCode = familyCode.trim().toUpperCase();
+        const family = await prisma.family.findFirst({
+          where: {
+            schoolId: school.id,
+            familyCode: formattedFamilyCode,
+            status: 'ACTIVE',
+          },
+        });
 
-      if (!family) {
-        return errorResponse(res, 'Family Code not found in this school', 404);
-      }
+        if (!family) {
+          return errorResponse(res, 'Family Code not found in this school', 404);
+        }
 
-      targetEntity = await prisma.parent.findFirst({
-        where: {
-          schoolId: school.id,
-          familyId: family.id,
-          mobile: formattedMobile,
-          status: 'ACTIVE',
-        },
-      });
+        targetEntity = await prisma.parent.findFirst({
+          where: {
+            schoolId: school.id,
+            familyId: family.id,
+            mobile: formattedMobile,
+            status: 'ACTIVE',
+          },
+        });
 
-      if (!targetEntity) {
-        return errorResponse(res, 'Mobile number not registered under this family code', 404);
+        if (!targetEntity) {
+          return errorResponse(res, 'Mobile number not registered under this family code', 404);
+        }
+
+        familyId = family.id;
+      } else {
+        // Option 2: Mobile number + School Code only
+        targetEntity = await prisma.parent.findFirst({
+          where: {
+            schoolId: school.id,
+            mobile: formattedMobile,
+            status: 'ACTIVE',
+          },
+          include: {
+            family: true,
+          },
+        });
+
+        if (!targetEntity) {
+          return errorResponse(res, 'Mobile number not registered as an active parent in this school', 404);
+        }
+
+        familyId = targetEntity.familyId;
       }
 
       // Store familyId in session creation
@@ -162,7 +182,7 @@ const requestOtp = async (req, res, next) => {
         mobile: formattedMobile,
         role: 'PARENT',
         schoolId: school.id,
-        familyId: family.id,
+        familyId,
       });
 
       return successResponse(res, {
@@ -425,6 +445,102 @@ const verifyOtp = async (req, res, next) => {
 };
 
 /**
+ * Direct Parent Login with Family Code only (Option 1)
+ * POST /api/auth/family-login
+ */
+const loginByFamilyCode = async (req, res, next) => {
+  try {
+    const { familyCode, schoolCode } = req.body;
+
+    if (!familyCode || !familyCode.trim()) {
+      return errorResponse(res, 'Family Code is required', 400);
+    }
+
+    const formattedFamilyCode = familyCode.trim().toUpperCase();
+
+    const where = {
+      familyCode: formattedFamilyCode,
+      status: 'ACTIVE',
+    };
+
+    if (schoolCode && schoolCode.trim()) {
+      const school = await prisma.school.findUnique({
+        where: { code: schoolCode.trim().toUpperCase() },
+      });
+      if (school) {
+        where.schoolId = school.id;
+      }
+    }
+
+    const family = await prisma.family.findFirst({
+      where,
+      include: {
+        school: true,
+        parents: {
+          where: { status: 'ACTIVE' },
+        },
+        students: {
+          where: { status: 'ACTIVE' },
+          include: {
+            bus: true,
+            pickupStop: true,
+            dropStop: true,
+          },
+        },
+      },
+    });
+
+    if (!family) {
+      return errorResponse(res, 'Invalid Family Code. Family not found.', 404);
+    }
+
+    if (family.school && family.school.status !== 'ACTIVE') {
+      return errorResponse(res, 'School account is suspended. Contact administration.', 403);
+    }
+
+    // Get active parent profile or use default
+    const parent = family.parents[0] || {
+      id: family.id,
+      name: family.primaryContactName || 'Parent',
+      mobile: family.primaryContactPhone || '',
+    };
+
+    const token = generateToken({
+      parentId: parent.id,
+      familyId: family.id,
+      schoolId: family.schoolId,
+      role: 'PARENT',
+    });
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return successResponse(res, {
+      token,
+      user: {
+        id: parent.id,
+        parentId: parent.id,
+        name: parent.name,
+        mobile: parent.mobile,
+        role: 'PARENT',
+        schoolId: family.schoolId,
+        schoolName: family.school?.name,
+        schoolCode: family.school?.code,
+        familyId: family.id,
+        familyCode: family.familyCode,
+        children: family.students,
+      },
+    }, 'Parent login successful');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Get current authenticated user session
  * GET /api/auth/me
  */
@@ -451,8 +567,10 @@ const logout = async (req, res, next) => {
 
 module.exports = {
   loginAdmin,
+  loginByFamilyCode,
   requestOtp,
   verifyOtp,
   getMe,
   logout,
 };
+

@@ -1,0 +1,16 @@
+{
+  "short_name": "Busly",
+  "name": "Busly - Smart School Transport",
+  "icons": [
+    {
+      "src": "/bus-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#111827",
+  "theme_color": "#F5B800",
+  "display": "standalone",
+  "orientation": "portrait"
+}

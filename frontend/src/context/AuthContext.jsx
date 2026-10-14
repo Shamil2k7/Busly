@@ -114,6 +114,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginByFamilyCode = async (familyCode, schoolCode) => {
+    try {
+      const res = await api.post('/api/auth/family-login', {
+        familyCode: familyCode?.trim().toUpperCase(),
+        schoolCode: schoolCode?.trim().toUpperCase() || undefined,
+      });
+      if (res.success) {
+        api.setToken(res.data.token);
+        setUser(res.data.user);
+        showToast(`Welcome! Family ${res.data.user.familyCode} connected.`, 'success');
+        router.push(getDashboardRoute(res.data.user.role));
+        return { success: true, data: res.data };
+      }
+    } catch (err) {
+      showToast(err.message || 'Family Code login failed', 'error');
+      return { success: false, error: err.message };
+    }
+  };
+
   const logout = async () => {
     try {
       await api.post('/api/auth/logout', {});
@@ -134,6 +153,7 @@ export const AuthProvider = ({ children }) => {
         user,
         loading,
         loginAdmin,
+        loginByFamilyCode,
         requestOtp,
         verifyOtp,
         logout,

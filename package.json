@@ -8,6 +8,8 @@
     "start": "npm --prefix frontend run start",
     "dev": "npm --prefix frontend run dev",
     "lint": "npm --prefix frontend run lint",
-    "install:all": "npm --prefix frontend install && npm --prefix backend install"
+    "mobile:dev": "npm --prefix mobile run dev",
+    "mobile:build": "npm --prefix mobile run build",
+    "install:all": "npm --prefix frontend install && npm --prefix backend install && npm --prefix mobile install"
   }
 }

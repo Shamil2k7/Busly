@@ -1,0 +1,12 @@
+{
+  "appId": "com.busly.app",
+  "appName": "Busly",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

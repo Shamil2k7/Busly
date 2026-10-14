@@ -180,6 +180,19 @@ test('BUSLY Core Domain Flows & Security Tests', async (t) => {
     assert.strictEqual(verifyBody.data.user.name, 'Ramesh Nair');
     assert.strictEqual(verifyBody.data.user.children.length, 1);
     assert.strictEqual(verifyBody.data.user.children[0].name, 'Kavya Nair');
+
+    // Also verify Option 1: Direct Family Code Only login works for newly enrolled family
+    const directRes = await fetch(`${baseUrl}/api/auth/family-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        familyCode: generatedFamilyCode,
+      }),
+    });
+    assert.strictEqual(directRes.status, 200);
+    const directBody = await directRes.json();
+    assert.strictEqual(directBody.data.user.name, 'Ramesh Nair');
+    assert.strictEqual(directBody.data.user.familyCode, generatedFamilyCode);
   });
 
   await t.test('Flow 3: Tenant Isolation & Parent Cross-Family Protection', async () => {

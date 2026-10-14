@@ -47,9 +47,9 @@ export default function LandingPage() {
       title: 'Parent App',
       desc: 'Track child’s bus live, monitor pickup/drop ETA, pay transport fees & receipts.',
       href: '/otp-login?role=PARENT',
-      tag: 'Family Code Access',
+      tag: 'Family Code or Mobile OTP',
       color: 'bg-blue-600 text-white',
-      demo: 'School: ABC123 | Family: FAM7824 | Mobile: 9876543220',
+      demo: '1: Family Code (FAM7824) | 2: ABC123 + 9876543220',
     },
   ];
 

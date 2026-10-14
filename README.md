@@ -106,7 +106,9 @@
 - **Emergency SOS:** Immediate high-priority SOS trigger sending instant coordinates and alerts to the admin command center.
 
 ### 5. Parent Portal (`/parent/*`)
-- **Passwordless Zero-Friction Login:** School Code + Family Code + Registered Mobile Number + OTP.
+- **Two Flexible Parent Login Options:**
+  - **Option 1 (Family Code Only):** Zero-friction direct login with just the Family Code (e.g. `FAM7824`). No mobile or password required.
+  - **Option 2 (Mobile Number & School Code):** Phone-based OTP verification where the parent enters their School Code (e.g. `ABC123`) and registered mobile number (e.g. `9876543220`).
 - **Multi-Child Switcher (`/parent/home`):** Seamlessly switch between multiple children (e.g., Rahul in Bus 01, Anu in Bus 02) under one family code.
 - **Live Child Bus Tracking (`/parent/live-tracking`):** Track the exact bus location, ETA to designated stop, and trip status.
 - **Bus Fee Center (`/parent/bus-fees`):** View fee breakdowns, due dates, and pending installments.

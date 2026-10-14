@@ -161,7 +161,75 @@ test('Auth API Tests', async (t) => {
     driverToken = verifyBody.data.token;
   });
 
-  await t.test('7. Parent OTP Request & Verify Flow with Family Code', async () => {
+  await t.test('7a. Parent Option 1: Login with Family Code ONLY', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/family-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        familyCode: 'FAM7824',
+      }),
+    });
+
+    assert.strictEqual(res.status, 200);
+    const body = await res.json();
+    assert.strictEqual(body.success, true);
+    assert.strictEqual(body.data.user.role, 'PARENT');
+    assert.strictEqual(body.data.user.familyCode, 'FAM7824');
+    assert.strictEqual(body.data.user.name, 'Arun Kumar');
+    assert.strictEqual(body.data.user.children.length, 2);
+    assert.ok(body.data.token);
+  });
+
+  await t.test('7b. Parent Option 1: Reject invalid Family Code', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/family-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        familyCode: 'INVALID999',
+      }),
+    });
+
+    assert.strictEqual(res.status, 404);
+    const body = await res.json();
+    assert.strictEqual(body.success, false);
+  });
+
+  await t.test('7c. Parent Option 2: Login with Mobile Number and School Code (no family code)', async () => {
+    const reqRes = await fetch(`${baseUrl}/api/auth/otp/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        role: 'PARENT',
+        schoolCode: 'ABC123',
+        mobile: '9876543220',
+      }),
+    });
+
+    assert.strictEqual(reqRes.status, 200);
+    const reqBody = await reqRes.json();
+    const otpToUse = reqBody.data.devOtp || '123456';
+
+    const verifyRes = await fetch(`${baseUrl}/api/auth/otp/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        role: 'PARENT',
+        sessionId: reqBody.data.sessionId,
+        mobile: '9876543220',
+        otp: otpToUse,
+      }),
+    });
+
+    assert.strictEqual(verifyRes.status, 200);
+    const verifyBody = await verifyRes.json();
+    assert.strictEqual(verifyBody.success, true);
+    assert.strictEqual(verifyBody.data.user.role, 'PARENT');
+    assert.strictEqual(verifyBody.data.user.familyCode, 'FAM7824');
+    assert.strictEqual(verifyBody.data.user.children.length, 2);
+    parentToken = verifyBody.data.token;
+  });
+
+  await t.test('7d. Parent OTP Request & Verify Flow with Family Code (Backward Compatibility)', async () => {
     // Request OTP for Arun Kumar (FAM7824)
     const reqRes = await fetch(`${baseUrl}/api/auth/otp/request`, {
       method: 'POST',
@@ -194,9 +262,7 @@ test('Auth API Tests', async (t) => {
     assert.strictEqual(verifyBody.success, true);
     assert.strictEqual(verifyBody.data.user.role, 'PARENT');
     assert.strictEqual(verifyBody.data.user.familyCode, 'FAM7824');
-    // Arun Kumar has 2 children: Rahul Kumar and Anu Kumar
     assert.strictEqual(verifyBody.data.user.children.length, 2);
-    parentToken = verifyBody.data.token;
   });
 
   await t.test('8. Parent login rejects incorrect Family Code', async () => {
