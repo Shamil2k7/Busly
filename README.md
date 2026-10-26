@@ -1,6 +1,6 @@
 # BUSLY — Smart School Transport
 
-> **Tagline:** Smart School Transport  
+> **Tagline:** Smart  School Transport  
 > **Type:** Production-Ready Multi-Tenant SaaS Platform  
 > **Roles Supported:** Super Admin, School Admin, Teacher, Driver, Parent  
 
