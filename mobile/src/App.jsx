@@ -33,8 +33,8 @@ function MobileAppContent() {
   // If unauthenticated, show AuthScreen
   if (!user) {
     return (
-      <div className="min-h-screen w-full bg-[#F8FAFC] flex justify-center">
-        <main className="w-full max-w-md min-h-screen h-[100dvh] bg-[#F8FAFC] flex flex-col relative overflow-hidden shadow-xl md:border-x md:border-gray-200">
+      <div className="min-h-screen min-h-[100dvh] w-full bg-[#F8FAFC] flex flex-col justify-center items-center p-3">
+        <main className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col relative">
           <Toast />
           <AuthScreen />
         </main>
@@ -96,60 +96,58 @@ function MobileAppContent() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC] flex justify-center">
-      <main className="w-full max-w-md min-h-screen h-[100dvh] bg-[#F8FAFC] flex flex-col relative overflow-hidden shadow-xl md:border-x md:border-gray-200">
-        <Toast />
+    <div className="min-h-screen min-h-[100dvh] w-full bg-[#F8FAFC] flex flex-col text-gray-900">
+      <Toast />
 
-        {/* Top Header */}
-        <TopBar
-          title={
-            role === 'PARENT'
-              ? `Family ${user.familyCode || 'FAM'}`
-              : role === 'TEACHER'
-              ? user.name
-              : `${user.assignedBus?.busNumber || 'BUS 01'}`
-          }
-          subtitle={
-            role === 'PARENT'
-              ? user.schoolName
-              : role === 'TEACHER'
-              ? `Class ${user.assignedClasses || '10'}`
-              : `Driver ${user.name}`
-          }
-          onOpenRoleModal={() => setIsRoleModalOpen(true)}
-        />
+      {/* Top Header */}
+      <TopBar
+        title={
+          role === 'PARENT'
+            ? `Family ${user.familyCode || 'FAM'}`
+            : role === 'TEACHER'
+            ? user.name
+            : `${user.assignedBus?.busNumber || 'BUS 01'}`
+        }
+        subtitle={
+          role === 'PARENT'
+            ? user.schoolName
+            : role === 'TEACHER'
+            ? `Class ${user.assignedClasses || '10'}`
+            : `Driver ${user.name}`
+        }
+        onOpenRoleModal={() => setIsRoleModalOpen(true)}
+      />
 
-        {/* Active Screen Content */}
-        <div className="flex-1 flex flex-col min-h-0 bg-[#F8FAFC] overflow-hidden">
-          {renderRoleScreen()}
-        </div>
-
-        {/* Bottom Navigation */}
-        <BottomNav
-          activeTab={activeTab}
-          onSelectTab={(tab) => setActiveTab(tab)}
-          onOpenAddStudent={() => setIsAddStudentOpen(true)}
-          onOpenSos={() => setIsSosOpen(true)}
-        />
-
-        {/* Role Switcher Modal */}
-        <RoleSwitcherModal
-          isOpen={isRoleModalOpen}
-          onClose={() => setIsRoleModalOpen(false)}
-        />
-
-        {/* Teacher Add Student Enrollment Modal */}
-        <TeacherAddStudentModal
-          isOpen={isAddStudentOpen}
-          onClose={() => setIsAddStudentOpen(false)}
-        />
-
-        {/* Driver SOS Emergency Modal */}
-        <DriverSosModal
-          isOpen={isSosOpen}
-          onClose={() => setIsSosOpen(false)}
-        />
+      {/* Active Screen Content */}
+      <main className="flex-1 w-full max-w-3xl mx-auto flex flex-col min-h-0 bg-[#F8FAFC] overflow-hidden">
+        {renderRoleScreen()}
       </main>
+
+      {/* Bottom Navigation */}
+      <BottomNav
+        activeTab={activeTab}
+        onSelectTab={(tab) => setActiveTab(tab)}
+        onOpenAddStudent={() => setIsAddStudentOpen(true)}
+        onOpenSos={() => setIsSosOpen(true)}
+      />
+
+      {/* Role Switcher Modal */}
+      <RoleSwitcherModal
+        isOpen={isRoleModalOpen}
+        onClose={() => setIsRoleModalOpen(false)}
+      />
+
+      {/* Teacher Add Student Enrollment Modal */}
+      <TeacherAddStudentModal
+        isOpen={isAddStudentOpen}
+        onClose={() => setIsAddStudentOpen(false)}
+      />
+
+      {/* Driver SOS Emergency Modal */}
+      <DriverSosModal
+        isOpen={isSosOpen}
+        onClose={() => setIsSosOpen(false)}
+      />
     </div>
   );
 }

@@ -1,14 +1,21 @@
-// API client with seamless fallback to demo data if backend server is offline
+// API client connecting directly to live Busly backend on Vercel
 
-const DEFAULT_API_URL = 'http://localhost:5000';
+export const LIVE_BACKEND_URL = 'https://backend-4um6.vercel.app';
+const DEFAULT_API_URL = (import.meta.env && import.meta.env.VITE_API_BASE_URL) || LIVE_BACKEND_URL;
 
 class MobileApiClient {
   constructor() {
-    this.baseUrl = localStorage.getItem('busly_mobile_api_url') || DEFAULT_API_URL;
+    let saved = localStorage.getItem('busly_mobile_api_url');
+    // If previously saved URL pointed to localhost/127.0.0.1 or is empty, automatically update to live backend
+    if (!saved || saved.includes('localhost') || saved.includes('127.0.0.1')) {
+      saved = DEFAULT_API_URL;
+      localStorage.setItem('busly_mobile_api_url', saved);
+    }
+    this.baseUrl = saved.replace(/\/+$/, '');
   }
 
   setBaseUrl(url) {
-    this.baseUrl = url.replace(/\/+$/, '');
+    this.baseUrl = (url || DEFAULT_API_URL).replace(/\/+$/, '');
     localStorage.setItem('busly_mobile_api_url', this.baseUrl);
   }
 
@@ -29,7 +36,8 @@ class MobileApiClient {
   }
 
   async request(endpoint, options = {}) {
-    const url = `${this.baseUrl}${endpoint}`;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${this.baseUrl}${cleanEndpoint}`;
     const token = this.getToken();
 
     const headers = {
@@ -40,7 +48,7 @@ class MobileApiClient {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout for mobile
+      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout for serverless / cloud API
 
       const response = await fetch(url, {
         ...options,
@@ -52,12 +60,12 @@ class MobileApiClient {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.message || `Request failed with status ${response.status}`);
+        throw new Error(data.message || data.error || `Request failed with status ${response.status}`);
       }
 
       return data;
     } catch (error) {
-      console.warn(`[MobileApi] Fetch to ${endpoint} failed or timed out:`, error.message);
+      console.warn(`[MobileApi] Request to ${cleanEndpoint} failed:`, error.message);
       throw error;
     }
   }
@@ -70,7 +78,7 @@ class MobileApiClient {
     return this.request(endpoint, {
       ...options,
       method: 'POST',
-      body: JSON.stringify(body),
+      body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   }
 
@@ -78,8 +86,20 @@ class MobileApiClient {
     return this.request(endpoint, {
       ...options,
       method: 'PUT',
-      body: JSON.stringify(body),
+      body: body !== undefined ? JSON.stringify(body) : undefined,
     });
+  }
+
+  patch(endpoint, body, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  delete(endpoint, options = {}) {
+    return this.request(endpoint, { ...options, method: 'DELETE' });
   }
 }
 

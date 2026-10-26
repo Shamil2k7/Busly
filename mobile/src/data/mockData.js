@@ -140,3 +140,23 @@ export const DEMO_FEES = [
     feePlanName: 'Junior Transport Plan',
   },
 ];
+
+export const DEMO_NOTIFICATIONS = [
+  {
+    id: 'notif-1',
+    title: 'Bus Arrived at Stop',
+    message: 'BUS 01 has arrived at Nilambur Central.',
+    type: 'ALERT',
+    createdAt: new Date().toISOString(),
+    isRead: false,
+  },
+  {
+    id: 'notif-2',
+    title: 'Trip Started',
+    message: 'Morning trip for BUS 01 has started.',
+    type: 'INFO',
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+    isRead: true,
+  },
+];
+

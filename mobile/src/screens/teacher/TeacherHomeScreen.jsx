@@ -8,7 +8,25 @@ import {
 import { useMobileAuth } from '../../context/MobileAuthContext';
 
 export default function TeacherHomeScreen({ onNavigate, onOpenAddStudent }) {
-  const { user, tripState } = useMobileAuth();
+  const { user, tripState, studentsRoster, fleetBuses } = useMobileAuth();
+
+  const studentsCount = studentsRoster?.length ?? tripState.students?.length ?? 0;
+  const displayBuses = fleetBuses && fleetBuses.length > 0 ? fleetBuses : [
+    {
+      id: 'b1',
+      busNumber: 'BUS 01',
+      route: { name: 'Nilambur Route' },
+      driver: { name: 'Rajesh Kumar' },
+      status: 'ACTIVE',
+    },
+    {
+      id: 'b2',
+      busNumber: 'BUS 02',
+      route: { name: 'Town Route' },
+      driver: { name: 'Vishnu Kumar' },
+      status: 'ACTIVE',
+    },
+  ];
 
   return (
     <div className="flex-1 bg-[#F8FAFC] text-gray-900 flex flex-col p-4 space-y-4 overflow-y-auto no-scrollbar font-sans">
@@ -41,7 +59,7 @@ export default function TeacherHomeScreen({ onNavigate, onOpenAddStudent }) {
             <span className="text-xs font-semibold">My Students</span>
             <Users className="w-4 h-4 text-amber-500" />
           </div>
-          <p className="text-2xl font-black text-gray-900">{tripState.students?.length || 24}</p>
+          <p className="text-2xl font-black text-gray-900">{studentsCount}</p>
           <p className="text-[10px] text-gray-400 font-medium">Class roster</p>
         </div>
 
@@ -50,7 +68,7 @@ export default function TeacherHomeScreen({ onNavigate, onOpenAddStudent }) {
             <span className="text-xs font-semibold">Active Buses</span>
             <Bus className="w-4 h-4 text-emerald-500" />
           </div>
-          <p className="text-2xl font-black text-gray-900">2</p>
+          <p className="text-2xl font-black text-gray-900">{displayBuses.length}</p>
           <p className="text-[10px] text-emerald-600 font-semibold">On transit</p>
         </div>
       </div>
@@ -72,37 +90,42 @@ export default function TeacherHomeScreen({ onNavigate, onOpenAddStudent }) {
         </div>
 
         <div className="space-y-2 pt-1">
-          {/* Bus 01 Item */}
-          <div className="bg-gray-50 p-3 rounded-xl border border-gray-200/70 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-busly-primary text-slate-900 flex items-center justify-center font-bold text-xs shadow-2xs">
-                01
-              </div>
-              <div>
-                <h4 className="font-bold text-xs text-gray-900">BUS 01 (Nilambur Route)</h4>
-                <p className="text-[10px] text-gray-500">Driver: Rajesh Kumar • Speed: {tripState.speed} km/h</p>
-              </div>
-            </div>
-            <span className="text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
-              ACTIVE
-            </span>
-          </div>
+          {displayBuses.map((bus, idx) => {
+            const isPrimary = bus.busNumber?.includes('01') || idx === 0;
+            const busNumShort = bus.busNumber?.replace(/[^0-9]/g, '') || `0${idx + 1}`;
+            const driverName = bus.driver?.name || 'Assigned Driver';
+            const speedInfo = isPrimary ? `Speed: ${tripState.speed} km/h` : 'Route Active';
 
-          {/* Bus 02 Item */}
-          <div className="bg-gray-50 p-3 rounded-xl border border-gray-200/70 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gray-200 text-gray-700 flex items-center justify-center font-bold text-xs">
-                02
+            return (
+              <div
+                key={bus.id || idx}
+                className="bg-gray-50 p-3 rounded-xl border border-gray-200/70 flex items-center justify-between transition hover:border-gray-300"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
+                      isPrimary
+                        ? 'bg-busly-primary text-slate-900 shadow-2xs'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    {busNumShort}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs text-gray-900">
+                      {bus.busNumber} ({bus.route?.name || 'School Route'})
+                    </h4>
+                    <p className="text-[10px] text-gray-500">
+                      Driver: {driverName} • {speedInfo}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
+                  {bus.status || 'ACTIVE'}
+                </span>
               </div>
-              <div>
-                <h4 className="font-bold text-xs text-gray-900">BUS 02 (Town Church Route)</h4>
-                <p className="text-[10px] text-gray-500">Driver: Suresh Babu • Standing at Stop 2</p>
-              </div>
-            </div>
-            <span className="text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
-              ACTIVE
-            </span>
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -1,13 +1,37 @@
-import React, { useState } from 'react';
-import { Search, Phone, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Phone, MapPin, RefreshCw, Bus } from 'lucide-react';
 import { useMobileAuth } from '../../context/MobileAuthContext';
 
 export default function TeacherRosterScreen({ onOpenAddStudent }) {
-  const { tripState } = useMobileAuth();
+  const { studentsRoster, loadStudents, tripState, showToast } = useMobileAuth();
   const [search, setSearch] = useState('');
   const [filterDiv, setFilterDiv] = useState('ALL');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const students = tripState.students || [];
+  useEffect(() => {
+    loadStudents();
+  }, [loadStudents]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadStudents();
+    setIsRefreshing(false);
+    showToast('Student roster refreshed from live server', 'info');
+  };
+
+  const rawList = studentsRoster.length > 0 ? studentsRoster : (tripState.students || []);
+
+  const students = rawList.map((st) => ({
+    id: st.id,
+    name: st.name,
+    studentId: st.studentId,
+    class: `${st.class || ''}${st.division ? `-${st.division}` : ''}`,
+    stop: st.pickupStop?.name || st.stop || 'School Stop',
+    busNumber: st.bus?.busNumber || st.busNumber || 'BUS 01',
+    parentName: st.family?.parents?.[0]?.name || st.parentName || 'Guardian',
+    parentMobile: st.family?.parents?.[0]?.mobile || st.parentMobile || '',
+    status: st.status === 'ACTIVE' ? 'WAITING' : (st.status || 'WAITING'),
+  }));
 
   const filteredStudents = students.filter((s) => {
     const matchesSearch =
@@ -37,14 +61,24 @@ export default function TeacherRosterScreen({ onOpenAddStudent }) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Class 10 Student Roster ({filteredStudents.length})
+            Student Transport Roster ({filteredStudents.length})
           </h3>
-          <button
-            onClick={onOpenAddStudent}
-            className="text-[11px] font-bold text-slate-900 bg-busly-primary hover:bg-busly-primary-hover px-2.5 py-1 rounded-lg shadow-2xs transition"
-          >
-            + Enroll
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="p-1.5 text-gray-500 hover:text-gray-900 rounded-lg border border-gray-200 bg-white"
+              title="Refresh Roster"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={onOpenAddStudent}
+              className="text-[11px] font-bold text-slate-900 bg-busly-primary hover:bg-busly-primary-hover px-2.5 py-1 rounded-lg shadow-2xs transition"
+            >
+              + Enroll
+            </button>
+          </div>
         </div>
 
         {/* Search Input */}
@@ -60,12 +94,12 @@ export default function TeacherRosterScreen({ onOpenAddStudent }) {
         </div>
 
         {/* Division Filter Pills */}
-        <div className="flex gap-1.5 pt-1">
-          {['ALL', '10-A', '10-B'].map((div) => (
+        <div className="flex gap-1.5 pt-1 overflow-x-auto no-scrollbar">
+          {['ALL', '10', '10-A', '10-B', '6-B'].map((div) => (
             <button
               key={div}
               onClick={() => setFilterDiv(div)}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition shrink-0 ${
                 filterDiv === div
                   ? 'bg-busly-primary text-slate-900 font-extrabold shadow-2xs'
                   : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
@@ -104,10 +138,11 @@ export default function TeacherRosterScreen({ onOpenAddStudent }) {
                 <div>
                   <p className="text-[11px] text-gray-600 flex items-center gap-1 font-medium">
                     <MapPin className="w-3.5 h-3.5 text-amber-500" />
-                    <span>{st.stop || 'Nilambur Stop'}</span>
+                    <span>{st.stop}</span>
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">
-                    Parent: {st.parentName || 'Guardian'}
+                  <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
+                    <Bus className="w-3 h-3 text-gray-400" />
+                    <span>{st.busNumber} • Parent: {st.parentName}</span>
                   </p>
                 </div>
 

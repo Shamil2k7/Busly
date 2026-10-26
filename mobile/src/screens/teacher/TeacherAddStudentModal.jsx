@@ -28,18 +28,27 @@ export default function TeacherAddStudentModal({ isOpen, onClose }) {
 
   const [generatedResult, setGeneratedResult] = useState(null);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.parentName || !formData.parentMobile) {
       showToast('Please fill all required student and parent fields', 'error');
       return;
     }
 
-    const res = enrollStudent(formData);
-    setGeneratedResult(res);
-    showToast('Student successfully enrolled!', 'success');
+    setIsSubmitting(true);
+    try {
+      const res = await enrollStudent(formData);
+      setGeneratedResult(res);
+      showToast('Student successfully enrolled into database!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Enrollment failed', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCopyCode = () => {

@@ -7,12 +7,15 @@ import {
   School,
   Lock,
   Bus,
+  CheckCircle2,
+  Server,
+  AlertCircle,
 } from 'lucide-react';
 import { useMobileAuth } from '../../context/MobileAuthContext';
-import { mobileApi } from '../../config/api';
+import { mobileApi, LIVE_BACKEND_URL } from '../../config/api';
 
 export default function AuthScreen() {
-  const { switchRole, setUser, showToast } = useMobileAuth();
+  const { switchRole, setUser, showToast, backendStatus } = useMobileAuth();
   const [selectedRole, setSelectedRole] = useState('PARENT'); // PARENT, TEACHER, DRIVER
   const [parentLoginMode, setParentLoginMode] = useState('FAMILY_CODE'); // FAMILY_CODE or OTP
 
@@ -20,9 +23,27 @@ export default function AuthScreen() {
   const [schoolCode, setSchoolCode] = useState('ABC123');
   const [familyCode, setFamilyCode] = useState('FAM7824');
   const [mobileNumber, setMobileNumber] = useState('9876543220');
+  const [sessionId, setSessionId] = useState('');
   const [otp, setOtp] = useState('');
   const [otpRequested, setOtpRequested] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const handleRoleChange = (role) => {
+    setSelectedRole(role);
+    setOtpRequested(false);
+    setSessionId('');
+    setOtp('');
+
+    // Pre-populate with registered test credentials for convenience
+    if (role === 'TEACHER') {
+      setMobileNumber('9876543210');
+    } else if (role === 'DRIVER') {
+      setMobileNumber('9876543211');
+    } else if (role === 'PARENT') {
+      setMobileNumber('9876543220');
+      setFamilyCode('FAM7824');
+    }
+  };
 
   const handleParentFamilyLogin = async (e) => {
     e.preventDefault();
@@ -39,11 +60,12 @@ export default function AuthScreen() {
       if (res.success && res.data) {
         mobileApi.setToken(res.data.token);
         setUser(res.data.user);
-        showToast('Logged in successfully!', 'success');
+        showToast(`Welcome back, ${res.data.user?.name || 'Parent'}!`, 'success');
+      } else {
+        showToast(res.message || 'Login failed', 'error');
       }
     } catch (err) {
-      showToast('Backend offline, loading Parent Demo', 'info');
-      switchRole('PARENT');
+      showToast(err.message || 'Failed to connect to live backend', 'error');
     } finally {
       setLoading(false);
     }
@@ -62,15 +84,20 @@ export default function AuthScreen() {
         schoolCode: schoolCode.trim().toUpperCase(),
         mobile: mobileNumber.trim(),
       });
-      if (res.success) {
+      if (res.success && res.data) {
+        setSessionId(res.data.sessionId);
         setOtpRequested(true);
-        setOtp(res.data?.devOtp || '123456');
-        showToast('OTP sent! Code: ' + (res.data?.devOtp || '123456'), 'success');
+        if (res.data.devOtp) {
+          setOtp(res.data.devOtp);
+          showToast(`OTP Code generated: ${res.data.devOtp}`, 'success');
+        } else {
+          showToast('OTP sent to your registered mobile number', 'success');
+        }
+      } else {
+        showToast(res.message || 'Failed to request OTP', 'error');
       }
     } catch (err) {
-      setOtpRequested(true);
-      setOtp('123456');
-      showToast('Demo OTP generated: 123456', 'info');
+      showToast(err.message || 'OTP request failed. Check School Code and Mobile.', 'error');
     } finally {
       setLoading(false);
     }
@@ -82,10 +109,14 @@ export default function AuthScreen() {
       showToast('Please enter 6-digit OTP', 'error');
       return;
     }
+    if (!sessionId) {
+      showToast('Please request an OTP first', 'error');
+      return;
+    }
     setLoading(true);
     try {
       const res = await mobileApi.post('/api/auth/otp/verify', {
-        sessionId: 'demo-session',
+        sessionId,
         role: selectedRole,
         mobile: mobileNumber.trim(),
         otp: otp.trim(),
@@ -93,10 +124,12 @@ export default function AuthScreen() {
       if (res.success && res.data) {
         mobileApi.setToken(res.data.token);
         setUser(res.data.user);
-        showToast('Authenticated successfully!', 'success');
+        showToast(`Authenticated as ${res.data.user?.name || selectedRole}!`, 'success');
+      } else {
+        showToast(res.message || 'Invalid OTP code', 'error');
       }
     } catch (err) {
-      switchRole(selectedRole);
+      showToast(err.message || 'OTP verification failed', 'error');
     } finally {
       setLoading(false);
     }
@@ -104,6 +137,14 @@ export default function AuthScreen() {
 
   return (
     <div className="flex-1 bg-[#F8FAFC] text-gray-900 flex flex-col p-5 safe-top safe-bottom overflow-y-auto no-scrollbar font-sans">
+      {/* Live Backend Connection Indicator */}
+      <div className="flex items-center justify-center mb-2">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Live API: backend-4um6.vercel.app</span>
+        </div>
+      </div>
+
       {/* Brand Header */}
       <div className="text-center my-3 space-y-2">
         <div className="inline-flex w-12 h-12 rounded-xl bg-busly-primary text-slate-900 items-center justify-center font-black text-2xl shadow-sm">
@@ -123,10 +164,7 @@ export default function AuthScreen() {
       <div className="flex p-1 bg-gray-100 rounded-xl mb-4 border border-gray-200">
         <button
           type="button"
-          onClick={() => {
-            setSelectedRole('PARENT');
-            setOtpRequested(false);
-          }}
+          onClick={() => handleRoleChange('PARENT')}
           className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${
             selectedRole === 'PARENT'
               ? 'bg-white text-gray-900 shadow-sm'
@@ -138,10 +176,7 @@ export default function AuthScreen() {
 
         <button
           type="button"
-          onClick={() => {
-            setSelectedRole('TEACHER');
-            setOtpRequested(false);
-          }}
+          onClick={() => handleRoleChange('TEACHER')}
           className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${
             selectedRole === 'TEACHER'
               ? 'bg-white text-gray-900 shadow-sm'
@@ -153,10 +188,7 @@ export default function AuthScreen() {
 
         <button
           type="button"
-          onClick={() => {
-            setSelectedRole('DRIVER');
-            setOtpRequested(false);
-          }}
+          onClick={() => handleRoleChange('DRIVER')}
           className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${
             selectedRole === 'DRIVER'
               ? 'bg-white text-gray-900 shadow-sm'
@@ -235,7 +267,7 @@ export default function AuthScreen() {
                 />
               </div>
               <p className="text-[11px] text-gray-500 mt-1">
-                Provided during admission (e.g. <span className="text-amber-600 font-mono font-bold">FAM7824</span>)
+                Live code in database: <span className="text-amber-600 font-mono font-bold">FAM7824</span>
               </p>
             </div>
 
@@ -244,7 +276,7 @@ export default function AuthScreen() {
               disabled={loading}
               className="w-full py-2.5 rounded-xl bg-busly-primary hover:bg-busly-primary-hover text-slate-900 font-bold text-sm transition shadow-sm flex items-center justify-center gap-2 touch-press"
             >
-              <span>{loading ? 'Accessing...' : 'Open Family Portal'}</span>
+              <span>{loading ? 'Connecting...' : 'Open Family Portal'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -283,6 +315,9 @@ export default function AuthScreen() {
                   required
                 />
               </div>
+              <p className="text-[11px] text-gray-500 mt-1">
+                Test mobile: <span className="font-mono font-bold text-indigo-600">{mobileNumber}</span>
+              </p>
             </div>
 
             {otpRequested && (
@@ -320,7 +355,7 @@ export default function AuthScreen() {
       {/* Instant 1-Tap Evaluation Logins */}
       <div className="mt-5 space-y-2">
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">
-          Instant Demo Evaluation
+          Instant Evaluation Switcher
         </p>
         <div className="grid grid-cols-3 gap-2">
           <button

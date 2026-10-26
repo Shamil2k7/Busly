@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CreditCard,
   CheckCircle2,
@@ -6,58 +6,76 @@ import {
   Download,
   X,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { useMobileAuth } from '../../context/MobileAuthContext';
-import { DEMO_FEES } from '../../data/mockData';
 
 export default function ParentFeesScreen() {
-  const { user, showToast } = useMobileAuth();
-  const [fees, setFees] = useState(DEMO_FEES);
+  const { user, fees, payFee, loadFees, showToast } = useMobileAuth();
   const [selectedFeeForPayment, setSelectedFeeForPayment] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('UPI'); // UPI, CARD, NETBANKING
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadFees();
+  }, [loadFees]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadFees();
+    setIsRefreshing(false);
+    showToast('Fee records updated from live server', 'info');
+  };
 
   const totalPending = fees
     .filter((f) => f.status === 'PENDING')
-    .reduce((sum, f) => sum + f.totalAmount, 0);
+    .reduce((sum, f) => sum + (f.totalAmount || 0), 0);
 
   const totalPaid = fees
     .filter((f) => f.status === 'PAID')
-    .reduce((sum, f) => sum + f.totalAmount, 0);
+    .reduce((sum, f) => sum + (f.totalAmount || 0), 0);
 
   const handlePayFee = (fee) => {
     setSelectedFeeForPayment(fee);
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
+    if (!selectedFeeForPayment) return;
     setIsProcessing(true);
-    setTimeout(() => {
+    try {
+      const res = await payFee(selectedFeeForPayment, paymentMethod);
       setIsProcessing(false);
-      const updatedFees = fees.map((f) => {
-        if (f.id === selectedFeeForPayment.id) {
-          const receiptNumber = `RCP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-          return {
-            ...f,
-            status: 'PAID',
-            paidAt: new Date().toISOString().split('T')[0],
-            receiptNumber,
-          };
-        }
-        return f;
-      });
-      setFees(updatedFees);
-      showToast('Payment successful! Digital receipt generated.', 'success');
-
-      // Open receipt immediately
-      const paidItem = updatedFees.find((f) => f.id === selectedFeeForPayment.id);
       setSelectedFeeForPayment(null);
-      setSelectedReceipt(paidItem);
-    }, 1500);
+
+      // Open digital receipt
+      setSelectedReceipt({
+        ...selectedFeeForPayment,
+        receiptNumber: res.receipt?.receiptNumber || `RCP-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        paidAt: res.receipt?.date || new Date().toISOString().split('T')[0],
+      });
+    } catch (err) {
+      setIsProcessing(false);
+      showToast('Payment processing error', 'error');
+    }
   };
 
   return (
     <div className="flex-1 bg-[#F8FAFC] text-gray-900 flex flex-col p-4 space-y-4 overflow-y-auto no-scrollbar font-sans">
+      {/* Live sync banner */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-bold text-gray-900">Bus Transport Fees</h2>
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-gray-900 px-2 py-1 rounded-lg border border-gray-200 bg-white shadow-2xs"
+        >
+          <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span>Sync Live</span>
+        </button>
+      </div>
+
       {/* Overview Cards */}
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-white border border-amber-200 rounded-2xl p-3.5 space-y-1 shadow-2xs">
@@ -66,7 +84,7 @@ export default function ParentFeesScreen() {
             <Clock className="w-3.5 h-3.5 text-amber-500" />
           </div>
           <p className="text-xl font-extrabold text-amber-600">₹{totalPending}</p>
-          <p className="text-[10px] text-gray-400">Due by Oct 25, 2026</p>
+          <p className="text-[10px] text-gray-400">Current Academic Term</p>
         </div>
 
         <div className="bg-white border border-emerald-200 rounded-2xl p-3.5 space-y-1 shadow-2xs">
@@ -82,11 +100,14 @@ export default function ParentFeesScreen() {
       {/* Invoice List */}
       <div className="space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
-          Fee Invoices & Statements
+          Fee Invoices & Statements ({fees.length})
         </h3>
 
         {fees.map((fee) => {
           const isPending = fee.status === 'PENDING';
+          const studentName = fee.student?.name || fee.studentName || 'Student';
+          const studentId = fee.student?.studentId || fee.studentId || 'ID';
+          const periodLabel = fee.billingPeriodLabel || fee.billingPeriod || 'Term Transport Fee';
 
           return (
             <div
@@ -96,9 +117,9 @@ export default function ParentFeesScreen() {
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-bold text-gray-500 block">
-                    {fee.studentName} ({fee.studentId})
+                    {studentName} ({studentId})
                   </span>
-                  <h4 className="font-bold text-sm text-gray-900">{fee.billingPeriod} Bus Fee</h4>
+                  <h4 className="font-bold text-sm text-gray-900">{periodLabel}</h4>
                 </div>
                 <span
                   className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
@@ -115,7 +136,7 @@ export default function ParentFeesScreen() {
               <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-xs space-y-1">
                 <div className="flex justify-between text-gray-600">
                   <span>Base Transport Fee:</span>
-                  <span className="font-mono text-gray-900">₹{fee.baseAmount}</span>
+                  <span className="font-mono text-gray-900">₹{fee.baseAmount || fee.totalAmount}</span>
                 </div>
                 {fee.discount > 0 && (
                   <div className="flex justify-between text-emerald-700">
@@ -124,7 +145,7 @@ export default function ParentFeesScreen() {
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-gray-200">
-                  <span>Total Payable:</span>
+                  <span>Total Amount:</span>
                   <span className="font-mono text-amber-600 text-sm">₹{fee.totalAmount}</span>
                 </div>
               </div>
@@ -154,7 +175,7 @@ export default function ParentFeesScreen() {
 
       {/* Checkout Payment Modal */}
       {selectedFeeForPayment && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-fade-in font-sans">
           <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl p-5 shadow-2xl text-gray-900 space-y-4">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div className="flex items-center gap-2">
@@ -163,7 +184,7 @@ export default function ParentFeesScreen() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-gray-900">Busly Secure Checkout</h3>
-                  <p className="text-[10px] text-gray-500">{user?.schoolName}</p>
+                  <p className="text-[10px] text-gray-500">{user?.schoolName || 'School Transport'}</p>
                 </div>
               </div>
               <button
@@ -182,7 +203,7 @@ export default function ParentFeesScreen() {
                 ₹{selectedFeeForPayment.totalAmount}
               </span>
               <span className="text-[10px] text-gray-600 block mt-0.5">
-                {selectedFeeForPayment.billingPeriod} • {selectedFeeForPayment.studentName}
+                {selectedFeeForPayment.billingPeriodLabel || selectedFeeForPayment.billingPeriod || 'Bus Transport'}
               </span>
             </div>
 
@@ -239,7 +260,7 @@ export default function ParentFeesScreen() {
               className="w-full py-3 rounded-xl bg-busly-primary text-slate-900 font-bold text-sm hover:bg-busly-primary-hover transition shadow-sm flex items-center justify-center gap-2 touch-press"
             >
               {isProcessing ? (
-                <span>Securing Transaction...</span>
+                <span>Securing Transaction with Server...</span>
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4" />
@@ -253,12 +274,12 @@ export default function ParentFeesScreen() {
 
       {/* Official Digital Receipt Modal */}
       {selectedReceipt && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-fade-in font-sans">
           <div className="w-full max-w-sm bg-white text-gray-900 rounded-2xl p-5 shadow-2xl space-y-4 relative border border-gray-200">
             <div className="flex items-center justify-between border-b border-gray-200 pb-3">
               <div>
-                <h3 className="font-extrabold text-base text-gray-900">ABC Public School</h3>
-                <p className="text-[10px] text-gray-500 font-medium">Digital Bus Fee Receipt</p>
+                <h3 className="font-extrabold text-base text-gray-900">{user?.schoolName || 'ABC Public School'}</h3>
+                <p className="text-[10px] text-gray-500 font-medium">Digital Bus Transport Receipt</p>
               </div>
               <button
                 onClick={() => setSelectedReceipt(null)}
@@ -271,23 +292,25 @@ export default function ParentFeesScreen() {
             <div className="bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-gray-500">Receipt No:</span>
-                <span className="font-mono font-bold text-gray-900">{selectedReceipt.receiptNumber}</span>
+                <span className="font-mono font-bold text-gray-900">
+                  {selectedReceipt.receiptNumber || selectedReceipt.payments?.[0]?.receiptNumber || 'RCP-2026-LIVE'}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Student Name:</span>
-                <span className="font-bold text-gray-900">{selectedReceipt.studentName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Student ID:</span>
-                <span className="font-mono text-gray-900">{selectedReceipt.studentId}</span>
+                <span className="text-gray-500">Student:</span>
+                <span className="font-bold text-gray-900">
+                  {selectedReceipt.student?.name || selectedReceipt.studentName || 'Student'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Billing Period:</span>
-                <span className="font-bold text-gray-900">{selectedReceipt.billingPeriod}</span>
+                <span className="font-bold text-gray-900">
+                  {selectedReceipt.billingPeriodLabel || selectedReceipt.billingPeriod || 'Current Term'}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Paid Date:</span>
-                <span className="font-mono text-gray-900">{selectedReceipt.paidAt || '2026-10-14'}</span>
+                <span className="text-gray-500">Status:</span>
+                <span className="font-bold text-emerald-600">OFFICIALLY SETTLED</span>
               </div>
               <div className="flex justify-between font-extrabold text-gray-900 pt-2 border-t border-gray-200 text-sm">
                 <span>Amount Paid:</span>

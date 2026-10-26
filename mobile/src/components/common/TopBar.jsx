@@ -20,40 +20,42 @@ export default function TopBar({ title, subtitle, onOpenRoleModal, rightAction }
   const badge = getRoleBadge(user?.role);
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 pb-3 safe-top flex items-center justify-between shadow-sm shrink-0">
-      <div className="flex items-center space-x-2.5">
-        <div className="w-8 h-8 rounded-lg bg-busly-primary text-slate-900 flex items-center justify-center font-bold shadow-sm">
-          <Bus className="w-4 h-4 fill-current" />
+    <header className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 pb-3 safe-top shadow-sm shrink-0">
+      <div className="w-full max-w-3xl mx-auto flex items-center justify-between">
+        <div className="flex items-center space-x-2.5">
+          <div className="w-8 h-8 rounded-lg bg-busly-primary text-slate-900 flex items-center justify-center font-bold shadow-sm">
+            <Bus className="w-4 h-4 fill-current" />
+          </div>
+          <div>
+            <h1 className="font-bold text-sm text-gray-900 leading-tight">
+              {title || user?.name || user?.schoolName || 'BUSLY'}
+            </h1>
+            {subtitle && (
+              <p className="text-[11px] text-gray-500 leading-tight mt-0.5">{subtitle}</p>
+            )}
+          </div>
         </div>
-        <div>
-          <h1 className="font-bold text-sm text-gray-900 leading-tight">
-            {title || user?.name || user?.schoolName || 'BUSLY'}
-          </h1>
-          {subtitle && (
-            <p className="text-[11px] text-gray-500 leading-tight mt-0.5">{subtitle}</p>
-          )}
+
+        <div className="flex items-center space-x-2">
+          {rightAction}
+
+          <button
+            onClick={onOpenRoleModal}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border flex items-center gap-1 transition shadow-2xs ${badge.bg}`}
+            title="Switch User Role"
+          >
+            <span>{badge.label}</span>
+            <RefreshCw className="w-2.5 h-2.5 opacity-70" />
+          </button>
+
+          <button
+            onClick={logout}
+            title="Logout"
+            className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        {rightAction}
-
-        <button
-          onClick={onOpenRoleModal}
-          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border flex items-center gap-1 transition shadow-2xs ${badge.bg}`}
-          title="Switch User Role"
-        >
-          <span>{badge.label}</span>
-          <RefreshCw className="w-2.5 h-2.5 opacity-70" />
-        </button>
-
-        <button
-          onClick={logout}
-          title="Logout"
-          className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
       </div>
     </header>
   );

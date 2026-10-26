@@ -11,16 +11,29 @@ import {
 import { useMobileAuth } from '../../context/MobileAuthContext';
 
 export default function ParentLiveTrackingScreen() {
-  const { user, activeChildId, tripState } = useMobileAuth();
+  const { user, activeChildId, tripState, fleetBuses } = useMobileAuth();
   const children = user?.children || [];
   const selectedChild = children.find((c) => c.id === activeChildId) || children[0];
+
+  const busNumber = selectedChild?.bus?.busNumber || selectedChild?.busNumber || 'BUS 01';
+  const childStopName = selectedChild?.pickupStop?.name || selectedChild?.pickupStopName || 'Nilambur Central';
+
+  const assignedBus = fleetBuses?.find(
+    (b) => b.id === selectedChild?.busId || b.busNumber === busNumber
+  );
+  const driverName = assignedBus?.driver?.name || selectedChild?.bus?.driver?.name || 'Rajesh Kumar';
+  const driverPhone = assignedBus?.driver?.mobile || selectedChild?.bus?.driver?.mobile || '9876543211';
+  const routeName = assignedBus?.route?.name || selectedChild?.bus?.route?.name || 'Nilambur Route';
 
   const stops = tripState.stops;
   const currentStopIdx = tripState.currentStopIndex;
 
-  const childStopIdx = stops.findIndex((s) =>
-    s.name.toLowerCase().includes('nilambur') || s.name === selectedChild?.pickupStopName
-  ) || 3;
+  const foundIdx = stops.findIndex(
+    (s) =>
+      s.name?.toLowerCase() === childStopName.toLowerCase() ||
+      s.name?.toLowerCase().includes(childStopName.toLowerCase().split(' ')[0])
+  );
+  const childStopIdx = foundIdx !== -1 ? foundIdx : 0;
 
   return (
     <div className="flex-1 bg-[#F8FAFC] text-gray-900 flex flex-col overflow-y-auto no-scrollbar font-sans">
@@ -40,7 +53,7 @@ export default function ParentLiveTrackingScreen() {
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-center">
             <span className="text-[10px] text-gray-500 block font-medium">Bus</span>
-            <span className="text-xs font-bold text-gray-900">{selectedChild?.busNumber}</span>
+            <span className="text-xs font-bold text-gray-900">{busNumber}</span>
           </div>
 
           <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-center">
@@ -63,7 +76,7 @@ export default function ParentLiveTrackingScreen() {
               <Navigation className="w-3.5 h-3.5 text-amber-500" />
               Route Corridor View
             </span>
-            <span className="text-[10px] text-gray-500 font-mono">Nilambur Route #1</span>
+            <span className="text-[10px] text-gray-500 font-mono">{routeName}</span>
           </div>
 
           {/* SVG Map Canvas */}
@@ -215,10 +228,10 @@ export default function ParentLiveTrackingScreen() {
         <div className="p-3 bg-white border border-gray-200 rounded-xl flex items-center justify-between text-xs shadow-2xs">
           <div>
             <p className="font-bold text-gray-900">Transport Coordinator</p>
-            <p className="text-[10px] text-gray-500">Driver: Rajesh Kumar (+91 98765 43211)</p>
+            <p className="text-[10px] text-gray-500">Driver: {driverName} (+91 {driverPhone})</p>
           </div>
           <a
-            href="tel:+919876543211"
+            href={`tel:${driverPhone}`}
             className="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-emerald-700 font-bold border border-gray-300 flex items-center gap-1 transition"
           >
             <Phone className="w-3.5 h-3.5" /> Call
